@@ -43,7 +43,11 @@ The heading bank, drop zone, compact question renderer, Reading section, and bot
 
 ## Non-Reading impact
 
-No Listening, Writing, Speaking, backend, database, or API source file was changed for this Reading UI refresh. `IELTSExamPage.tsx` also contains those exam sections because it coordinates the complete mock-exam sequence, but the documented changes are limited to its Reading state and rendering path. After Reading submission, the existing flow still updates the mock attempt and continues to Writing.
+No dedicated Listening, Writing, Speaking, backend, database, or API source file was changed for this Reading UI refresh.
+
+`IELTSExamPage.tsx` is shared by the complete mock exam. Its top exam header and common action-button presentation were updated alongside the Reading workspace, so those shared visual changes are also visible while the candidate is in Listening, Writing, or Speaking. Section-specific behavior remains conditional: Reading annotations, Reading flags, `ReadingSection`, and `ReadingBottomNav` render only during Reading. The existing Listening, Writing, and Speaking component flows were not replaced.
+
+After Reading submission, the existing flow still submits each Reading attempt, updates the parent mock attempt, and continues to Writing.
 
 ## Data flow
 
