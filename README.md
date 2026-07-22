@@ -177,8 +177,8 @@ See `backend/.env.example` for all required environment variables:
 - Updated note/summary completion fields so their question number is visible
   only while the answer field is empty.
 
-Detailed implementation and validation notes are available in
-[`docs/task-logs`](docs/task-logs/).
+Implementation details are documented in
+[`docs/implementation/mock-reading-ui.md`](docs/implementation/mock-reading-ui.md).
 
 ---
 
