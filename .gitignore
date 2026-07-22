@@ -1,0 +1,32 @@
+# Dependencies
+**/node_modules/
+
+# Build output and generated metadata
+**/dist/
+**/coverage/
+**/*.tsbuildinfo
+
+# Environment files (keep examples)
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+
+# Logs and local runtime files
+*.log
+logs/
+tmp/
+temp/
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local Codex/agent instructions and state
+AGENTS.md
+.agents/
+.codex/

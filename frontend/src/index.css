@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Global Styles ──────────────────────────────────── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  @apply bg-[#fff0f0] text-gray-900 font-sans;
+}
+
+/* Practice accessibility controls: only explicitly marked exam copy scales. */
+.exam-readable,
+.exam-readable-heading {
+  transition:
+    font-size 160ms ease,
+    line-height 160ms ease;
+}
+
+[data-practice-font-size="small"] .exam-readable {
+  font-size: 0.75rem !important;
+  line-height: 1.6 !important;
+}
+
+[data-practice-font-size="large"] .exam-readable {
+  font-size: 1rem !important;
+  line-height: 1.8 !important;
+}
+
+[data-practice-font-size="small"] .exam-readable-heading {
+  font-size: 0.875rem !important;
+}
+
+[data-practice-font-size="large"] .exam-readable-heading {
+  font-size: 1.125rem !important;
+}
+
+/* ── Scrollbar ──────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+/* ── Selection ──────────────────────────────────────── */
+::selection {
+  @apply bg-primary-200 text-primary-900;
+}
+
+/* ── Disable user-select inside test containers ─────── */
+.test-container {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ── Watermark overlay ──────────────────────────────── */
+.watermark-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.04;
+  font-size: 1.5rem;
+  color: #000;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+  transform: rotate(-30deg);
+  line-height: 3;
+}
