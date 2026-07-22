@@ -15,6 +15,36 @@ No new runtime source file was created specifically for this UI refresh. The imp
 | `frontend/src/pages/tests/IELTSExamPage.tsx` | Full mock-exam runner | Reworked the Reading section into a two-pane workspace; added part instructions, passage and question scrolling, a resizable divider, grouped question rendering, previous/next controls, part-based question navigation, answered and flagged states, matching-headings drag and drop, and passage selection actions for notes and highlights. |
 | `frontend/src/components/reading/NoteCompletionGaps.tsx` | Note and summary completion inputs | Keeps the question number visible while a gap is empty, hides it after an answer is entered, and centers the entered value without changing the answer-array contract. |
 
+## Integration and call flow
+
+```text
+App.tsx
+└── ProtectedRoute: /exam/:examId
+    └── IELTSExamPage
+        ├── ReadingSection (only while section === "reading")
+        │   ├── ReadingHeadingBank
+        │   ├── ReadingHeadingDropZone
+        │   ├── CompactReadingQuestion
+        │   └── NoteCompletionGaps
+        └── ReadingBottomNav (only while Reading has questions)
+```
+
+| Caller | Callee | Condition or purpose |
+| --- | --- | --- |
+| `frontend/src/App.tsx` | `IELTSExamPage` | The protected `/exam/:examId` route opens the full-screen mock exam. |
+| `IELTSExamPage` | `ReadingSection` | Rendered when the active exam section is `reading` and Reading parts have loaded. |
+| `IELTSExamPage` | `ReadingBottomNav` | Rendered only for Reading when at least one Reading question exists. |
+| `ReadingSection` | `ReadingHeadingBank` | Rendered for a matching-headings question with a non-empty backend `wordBank`. |
+| `ReadingSection` | `ReadingHeadingDropZone` | Rendered beside each derived passage section for matching-headings placement. |
+| `ReadingSection` | `CompactReadingQuestion` | Renders compatible supplementary questions from the active Reading part. |
+| `ReadingSection` | `NoteCompletionGaps` | Renders note completion, summary completion, and compatible short-answer gap groups. |
+
+The heading bank, drop zone, compact question renderer, Reading section, and bottom navigation are local components inside `IELTSExamPage.tsx`. `NoteCompletionGaps` is the only imported Reading component changed by this refresh.
+
+## Non-Reading impact
+
+No Listening, Writing, Speaking, backend, database, or API source file was changed for this Reading UI refresh. `IELTSExamPage.tsx` also contains those exam sections because it coordinates the complete mock-exam sequence, but the documented changes are limited to its Reading state and rendering path. After Reading submission, the existing flow still updates the mock attempt and continues to Writing.
+
 ## Data flow
 
 The page continues to use backend-provided mock-exam and Reading data:
