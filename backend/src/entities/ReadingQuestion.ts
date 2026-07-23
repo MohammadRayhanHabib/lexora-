@@ -13,6 +13,7 @@ export enum ReadingQuestionType {
   YES_NO_NOT_GIVEN = "yes_no_not_given",
   MCQ_SINGLE = "mcq_single",
   MCQ_MULTIPLE = "mcq_multiple",
+  TITLE_SUBTITLE_FINDING = "title_subtitle_finding",
   FILL_IN_BLANKS = "fill_in_blanks",
   SENTENCE_COMPLETION = "sentence_completion",
   SUMMARY_COMPLETION = "summary_completion",

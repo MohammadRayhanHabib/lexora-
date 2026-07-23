@@ -22,7 +22,11 @@ export const Q_TYPE_GROUPS = [
   },
   {
     label: "Multiple Choice",
-    types: [ReadingQuestionType.MCQ_SINGLE, ReadingQuestionType.MCQ_MULTIPLE],
+    types: [
+      ReadingQuestionType.MCQ_SINGLE,
+      ReadingQuestionType.MCQ_MULTIPLE,
+      ReadingQuestionType.TITLE_SUBTITLE_FINDING,
+    ],
   },
   {
     label: "Fill / Complete",
@@ -60,6 +64,7 @@ export const needsOptions = (t: ReadingQuestionType) =>
   [
     ReadingQuestionType.MCQ_SINGLE,
     ReadingQuestionType.MCQ_MULTIPLE,
+    ReadingQuestionType.TITLE_SUBTITLE_FINDING,
     ReadingQuestionType.MATCHING_HEADINGS,
     ReadingQuestionType.MATCHING_INFORMATION,
     ReadingQuestionType.MATCHING_FEATURES,
@@ -89,6 +94,7 @@ export const needsWordBank = (t: ReadingQuestionType) =>
     ReadingQuestionType.LIST_MATCHING,
     ReadingQuestionType.CLASSIFICATION,
     ReadingQuestionType.DIAGRAM_LABEL_COMPLETION,
+    ReadingQuestionType.SUMMARY_COMPLETION,
   ].includes(t);
 
 export const isTFNG = (t: ReadingQuestionType) =>
@@ -131,7 +137,12 @@ export function mergeTypeChange(
         : TFNG_OPTIONS;
     next.correctAnswer = "";
   } else if (needsOptions(type)) {
-    if (type === ReadingQuestionType.NOTE_COMPLETION) {
+    if (type === ReadingQuestionType.TITLE_SUBTITLE_FINDING) {
+      next.questionText = "Choose the correct title for the passage.";
+      next.instructions = "Choose the correct letter, A, B, C or D.";
+      next.options = ["", "", "", ""];
+      next.correctAnswer = "";
+    } else if (type === ReadingQuestionType.NOTE_COMPLETION) {
       next.options = new Array(5).fill("");
       next.correctAnswer = new Array(
         countNoteCompletionGaps(next.options),
@@ -371,7 +382,9 @@ export const ReadingQuestionFormFields: React.FC<
       (form.questionType === ReadingQuestionType.MATCHING_INFORMATION ||
         form.questionType === ReadingQuestionType.MATCHING_FEATURES ||
         form.questionType === ReadingQuestionType.LIST_MATCHING ||
-        form.questionType === ReadingQuestionType.CLASSIFICATION) &&
+        form.questionType === ReadingQuestionType.CLASSIFICATION ||
+        form.questionType ===
+          ReadingQuestionType.MATCHING_SENTENCE_ENDINGS) &&
       Array.isArray(form.correctAnswer)
     ) {
       setField("correctAnswer", [...form.correctAnswer, ""]);
@@ -409,7 +422,9 @@ export const ReadingQuestionFormFields: React.FC<
       (form.questionType === ReadingQuestionType.MATCHING_INFORMATION ||
         form.questionType === ReadingQuestionType.MATCHING_FEATURES ||
         form.questionType === ReadingQuestionType.LIST_MATCHING ||
-        form.questionType === ReadingQuestionType.CLASSIFICATION) &&
+        form.questionType === ReadingQuestionType.CLASSIFICATION ||
+        form.questionType ===
+          ReadingQuestionType.MATCHING_SENTENCE_ENDINGS) &&
       Array.isArray(form.correctAnswer)
     ) {
       setField(
@@ -551,6 +566,8 @@ export const ReadingQuestionFormFields: React.FC<
               ? "e.g. Marie Curie's research on radioactivity (shown as the note heading)"
               : qType === ReadingQuestionType.SUMMARY_COMPLETION
                 ? "e.g. Calls by the umpire (bold sub-heading above the summary)"
+                : qType === ReadingQuestionType.TITLE_SUBTITLE_FINDING
+                  ? "e.g. Choose the correct title for the passage"
                 : qType === ReadingQuestionType.FLOWCHART_COMPLETION
                 ? "e.g. The Percolation Process (title centered above the flowchart)"
                 : qType === ReadingQuestionType.TABLE_COMPLETION
@@ -793,6 +810,8 @@ export const ReadingQuestionFormFields: React.FC<
                   ? "Optional word hints (shown under chart; not scored)"
                 : qType === ReadingQuestionType.TABLE_COMPLETION
                   ? "Optional word hints (shown under table; not scored)"
+                  : qType === ReadingQuestionType.SUMMARY_COMPLETION
+                    ? "Optional clue words or phrases"
                   : qType === ReadingQuestionType.MATCHING_INFORMATION
                   ? "Paragraph letters (column headers, e.g. A–G)"
                   : qType === ReadingQuestionType.MATCHING_FEATURES
@@ -866,6 +885,12 @@ export const ReadingQuestionFormFields: React.FC<
               needed.
             </p>
           )}
+          {qType === ReadingQuestionType.SUMMARY_COMPLETION && (
+            <p className="text-xs text-gray-500 mb-2">
+              Add the clue words or phrases shown in the answer box. Leave the
+              list empty for Summary Completion without clues.
+            </p>
+          )}
           <div className="space-y-2">
             {(form.wordBank ?? []).map((w, i) => (
               <div
@@ -887,8 +912,10 @@ export const ReadingQuestionFormFields: React.FC<
                       ? `Ending ${String.fromCharCode(65 + i)}`
                       : qType === ReadingQuestionType.FLOWCHART_COMPLETION
                         ? `Hint ${String.fromCharCode(65 + i)}`
-                        : qType === ReadingQuestionType.TABLE_COMPLETION
+                      : qType === ReadingQuestionType.TABLE_COMPLETION
                           ? `Hint ${String.fromCharCode(65 + i)}`
+                          : qType === ReadingQuestionType.SUMMARY_COMPLETION
+                            ? `Clue ${String.fromCharCode(65 + i)}`
                           : qType === ReadingQuestionType.MATCHING_INFORMATION
                           ? `Column label ${String.fromCharCode(65 + i)}`
                             : qType === ReadingQuestionType.MATCHING_FEATURES
@@ -943,7 +970,8 @@ export const ReadingQuestionFormFields: React.FC<
           </div>
         )}
 
-        {qType === ReadingQuestionType.MCQ_SINGLE && (
+        {(qType === ReadingQuestionType.MCQ_SINGLE ||
+          qType === ReadingQuestionType.TITLE_SUBTITLE_FINDING) && (
           <div className="space-y-2">
             {(form.options ?? []).map((opt, i) =>
               opt ? (

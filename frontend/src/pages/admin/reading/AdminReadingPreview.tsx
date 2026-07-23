@@ -286,7 +286,8 @@ const AnswerPreview: React.FC<{ q: IReadingQuestion }> = ({ q }) => {
 
   if (
     t === ReadingQuestionType.MCQ_SINGLE ||
-    t === ReadingQuestionType.MCQ_MULTIPLE
+    t === ReadingQuestionType.MCQ_MULTIPLE ||
+    t === ReadingQuestionType.TITLE_SUBTITLE_FINDING
   ) {
     return (
       <div className="space-y-2">
@@ -337,17 +338,41 @@ const AnswerPreview: React.FC<{ q: IReadingQuestion }> = ({ q }) => {
   ) {
     const n = countNoteCompletionGaps(options ?? []);
     return (
-      <NoteCompletionGaps
-        lines={options ?? []}
-        answer={new Array(n).fill("")}
-        onChange={() => {}}
-        firstQuestionNumber={q.orderNumber}
-        readOnly
-        showBullet={false}
-        appearance="summary"
-        lineTextClassName="text-sm text-gray-800"
-        emptyLinePlaceholder="Summary paragraph…"
-      />
+      <div className="space-y-3">
+        {(wordBank?.filter((word) => word.trim()).length ?? 0) > 0 && (
+          <div className="rounded-sm bg-gray-100 p-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-700">
+              Clue list
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {wordBank
+                ?.filter((word) => word.trim())
+                .map((word, index) => (
+                  <span
+                    key={`${word}-${index}`}
+                    className="rounded-sm border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-900"
+                  >
+                    <strong className="mr-1">
+                      {String.fromCharCode(65 + index)}
+                    </strong>
+                    {word}
+                  </span>
+                ))}
+            </div>
+          </div>
+        )}
+        <NoteCompletionGaps
+          lines={options ?? []}
+          answer={new Array(n).fill("")}
+          onChange={() => {}}
+          firstQuestionNumber={q.orderNumber}
+          readOnly
+          showBullet={false}
+          appearance="summary"
+          lineTextClassName="text-sm text-gray-800"
+          emptyLinePlaceholder="Summary paragraph…"
+        />
+      </div>
     );
   }
 

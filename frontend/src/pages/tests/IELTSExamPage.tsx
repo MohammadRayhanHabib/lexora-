@@ -38,6 +38,7 @@ import StatementMatchingPanel from "../../components/reading/StatementMatchingPa
 import ListMatchingPanel from "../../components/reading/ListMatchingPanel";
 import DiagramLabelCompletionPanel from "../../components/reading/DiagramLabelCompletionPanel";
 import NoteCompletionGaps from "../../components/reading/NoteCompletionGaps";
+import SentenceEndingMatchingPanel from "../../components/reading/SentenceEndingMatchingPanel";
 import {
   writingApi,
   IWritingModule,
@@ -1274,7 +1275,9 @@ const CompactReadingQuestion: React.FC<{
       : question.questionType === ReadingQuestionType.YES_NO_NOT_GIVEN
         ? YNNG_OPTS
         : question.questionType === ReadingQuestionType.MCQ_SINGLE ||
-            question.questionType === ReadingQuestionType.MCQ_MULTIPLE
+            question.questionType === ReadingQuestionType.MCQ_MULTIPLE ||
+            question.questionType ===
+              ReadingQuestionType.TITLE_SUBTITLE_FINDING
           ? question.options ?? []
           : null;
   const isMultiple = question.questionType === ReadingQuestionType.MCQ_MULTIPLE;
@@ -1333,7 +1336,9 @@ const CompactReadingQuestion: React.FC<{
                 />
                 <span>
                   {(question.questionType === ReadingQuestionType.MCQ_SINGLE ||
-                    question.questionType === ReadingQuestionType.MCQ_MULTIPLE) && (
+                    question.questionType === ReadingQuestionType.MCQ_MULTIPLE ||
+                    question.questionType ===
+                      ReadingQuestionType.TITLE_SUBTITLE_FINDING) && (
                     <span className="mr-2 font-semibold text-gray-500">
                       {String.fromCharCode(65 + optionIndex)}
                     </span>
@@ -1523,7 +1528,9 @@ const ReadingSection: React.FC<{
       (groupStart - activePart.offset - 1)
     : activeQNum;
   const displayGroupEnd =
-    currentQ?.questionType === ReadingQuestionType.MATCHING_HEADINGS
+    currentQ?.questionType === ReadingQuestionType.MATCHING_HEADINGS ||
+    currentQ?.questionType ===
+      ReadingQuestionType.MATCHING_SENTENCE_ENDINGS
       ? Math.max(
           groupEnd,
           groupStart + Math.max(1, currentQ.options?.length ?? 1) - 1,
@@ -2255,7 +2262,8 @@ const ReadingSection: React.FC<{
               )}
 
               {/* MCQ Single */}
-              {isType(ReadingQuestionType.MCQ_SINGLE) && (
+              {(isType(ReadingQuestionType.MCQ_SINGLE) ||
+                isType(ReadingQuestionType.TITLE_SUBTITLE_FINDING)) && (
                 <div className="space-y-2">
                   {(currentQ.options ?? []).map((opt, i) => (
                     <label
@@ -2384,6 +2392,46 @@ const ReadingSection: React.FC<{
                   visualVariant="classification"
                 />
               )}
+
+              {isType(ReadingQuestionType.MATCHING_SENTENCE_ENDINGS) && (
+                <SentenceEndingMatchingPanel
+                  questionId={currentQ._id}
+                  stems={currentQ.options ?? []}
+                  endings={currentQ.wordBank ?? []}
+                  answer={
+                    Array.isArray(answers[currentQ._id])
+                      ? (answers[currentQ._id] as string[])
+                      : []
+                  }
+                  onChange={(next) => setAnswer(currentQ._id, next)}
+                  firstQuestionNumber={groupStart}
+                />
+              )}
+
+              {summaryGapUi &&
+                (currentQ.wordBank?.filter((word) => word.trim()).length ?? 0) >
+                  0 && (
+                  <div className="rounded-sm bg-gray-100 p-3">
+                    <p className="mb-2 text-sm font-bold text-gray-950">
+                      Clue list
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {currentQ.wordBank
+                        ?.filter((word) => word.trim())
+                        .map((word, index) => (
+                          <span
+                            key={`${word}-${index}`}
+                            className="rounded-sm border border-gray-300 bg-white px-2.5 py-1.5 text-sm text-gray-900"
+                          >
+                            <strong className="mr-1.5">
+                              {String.fromCharCode(65 + index)}
+                            </strong>
+                            {word}
+                          </span>
+                        ))}
+                    </div>
+                  </div>
+                )}
 
               {/* Note completion — typable dashed gaps */}
               {(isType(ReadingQuestionType.NOTE_COMPLETION) ||
@@ -2528,7 +2576,9 @@ const ReadingSection: React.FC<{
                               currentQ.questionType ===
                                 ReadingQuestionType.LIST_MATCHING ||
                               currentQ.questionType ===
-                                ReadingQuestionType.CLASSIFICATION
+                                ReadingQuestionType.CLASSIFICATION ||
+                              currentQ.questionType ===
+                                ReadingQuestionType.MATCHING_SENTENCE_ENDINGS
                             ? setAnswer(
                                 currentQ._id,
                                 new Array(

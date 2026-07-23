@@ -8,12 +8,18 @@ This implementation is a visual and interaction layer. It does not introduce a s
 
 ## Runtime files
 
-No new runtime source file was created specifically for this UI refresh. The implementation updates two existing frontend files.
+The initial UI refresh updated the exam page and completion-gap component. The later question-pattern coverage adds one reusable Reading component and extends the existing authoring and type contracts.
 
 | File | Responsibility | Changes |
 | --- | --- | --- |
 | `frontend/src/pages/tests/IELTSExamPage.tsx` | Full mock-exam runner | Reworked the Reading section into a two-pane workspace; added part instructions, passage and question scrolling, a resizable divider, grouped question rendering, previous/next controls, part-based question navigation, answered and flagged states, matching-headings drag and drop, and passage selection actions for notes and highlights. |
 | `frontend/src/components/reading/NoteCompletionGaps.tsx` | Note and summary completion inputs | Keeps the question number visible while a gap is empty, hides it after an answer is entered, and centers the entered value without changing the answer-array contract. |
+| `frontend/src/components/reading/SentenceEndingMatchingPanel.tsx` | Matching sentence endings | New reusable stems-and-endings interface with drag/drop, click placement, keyboard-accessible controls, distractors, moving answers, and clearing answers. |
+| `frontend/src/api/reading.ts` | Frontend Reading contract | Adds the `title_subtitle_finding` type and its display label. |
+| `backend/src/entities/ReadingQuestion.ts` | Backend Reading contract | Accepts and stores the new `title_subtitle_finding` wire value. |
+| `frontend/src/pages/admin/reading/ReadingQuestionFormFields.tsx` | Question authoring | Adds Title/Subtitle Finding, keeps sentence-ending answer arrays aligned with stems, and makes the Summary clue list optional. |
+| `frontend/src/pages/admin/reading/AdminReadingPreview.tsx` | Admin preview | Previews Title/Subtitle options and Summary clue lists. |
+| `frontend/src/pages/tests/ReadingTestPage.tsx` | Standalone Reading runner | Uses the same Title/Subtitle type and Summary clue-list behavior outside the full mock exam. |
 
 ## Integration and call flow
 
@@ -24,6 +30,7 @@ App.tsx
         ├── ReadingSection (only while section === "reading")
         │   ├── ReadingHeadingBank
         │   ├── ReadingHeadingDropZone
+        │   ├── SentenceEndingMatchingPanel
         │   ├── CompactReadingQuestion
         │   └── NoteCompletionGaps
         └── ReadingBottomNav (only while Reading has questions)
@@ -36,6 +43,7 @@ App.tsx
 | `IELTSExamPage` | `ReadingBottomNav` | Rendered only for Reading when at least one Reading question exists. |
 | `ReadingSection` | `ReadingHeadingBank` | Rendered for a matching-headings question with a non-empty backend `wordBank`. |
 | `ReadingSection` | `ReadingHeadingDropZone` | Rendered beside each derived passage section for matching-headings placement. |
+| `ReadingSection` | `SentenceEndingMatchingPanel` | Rendered for `matching_sentence_endings`; `options` provide stems and `wordBank` provides the lettered endings. |
 | `ReadingSection` | `CompactReadingQuestion` | Renders compatible supplementary questions from the active Reading part. |
 | `ReadingSection` | `NoteCompletionGaps` | Renders note completion, summary completion, and compatible short-answer gap groups. |
 
@@ -73,6 +81,25 @@ The Reading interface renders passage fields such as `passageTitle`, `passageCon
 - A placed heading can be cleared or moved to another slot.
 - Answers remain in the existing `string[]` answer shape.
 
+### Matching sentence endings
+
+- Sentence stems come from `options`; lettered endings and distractors come from `wordBank`.
+- Students can drag an ending, select it and click a slot, move it to another stem, or clear it.
+- Each ending can be used once and answers are stored as an ordered `string[]` of letters.
+
+### Summary completion
+
+- `summary_completion` supports both variants without changing existing records.
+- A non-empty `wordBank` renders an A/B/C clue list above the summary.
+- An empty `wordBank` keeps the existing without-clue input layout.
+- Correct answers continue to use the ordered gap-answer array and existing backend scoring.
+
+### Title or subtitle finding
+
+- The dedicated wire value is `title_subtitle_finding`.
+- Admins configure the title/subtitle choices in `options` and select one correct answer.
+- The mock and standalone Reading runners display the choices as a single-answer lettered question.
+
 ### Passage annotations
 
 - Selecting passage text opens a compact Note/Highlight toolbar near the selection.
@@ -97,4 +124,4 @@ The Reading interface renders passage fields such as `passageTitle`, `passageCon
 
 - TypeScript project build: passed.
 - Staged whitespace check: passed.
-- Backend contracts and schemas: unchanged by this UI refresh.
+- Backend storage schema remains unchanged; the Reading question enum accepts the new title/subtitle value.

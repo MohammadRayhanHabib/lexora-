@@ -827,7 +827,8 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
       )}
 
       {/* MCQ Single */}
-      {t === ReadingQuestionType.MCQ_SINGLE && (
+      {(t === ReadingQuestionType.MCQ_SINGLE ||
+        t === ReadingQuestionType.TITLE_SUBTITLE_FINDING) && (
         <div className="space-y-2">
           {(q.options ?? []).map((opt, i) => (
             <label
@@ -901,15 +902,37 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
       )}
 
       {t === ReadingQuestionType.SUMMARY_COMPLETION && summaryGapUi && (
-        <NoteCompletionGaps
-          lines={q.options ?? []}
-          answer={arrAnswer}
-          onChange={onAnswer}
-          firstQuestionNumber={questionNumber}
-          showBullet={false}
-          appearance="summary"
-          emptyLinePlaceholder="Summary paragraph…"
-        />
+        <div className="space-y-3">
+          {(q.wordBank?.filter((word) => word.trim()).length ?? 0) > 0 && (
+            <div className="rounded-sm bg-gray-100 p-3">
+              <p className="mb-2 text-sm font-bold text-gray-950">Clue list</p>
+              <div className="flex flex-wrap gap-2">
+                {q.wordBank
+                  ?.filter((word) => word.trim())
+                  .map((word, index) => (
+                    <span
+                      key={`${word}-${index}`}
+                      className="rounded-sm border border-gray-300 bg-white px-2.5 py-1 text-sm text-gray-900"
+                    >
+                      <strong className="mr-1">
+                        {String.fromCharCode(65 + index)}
+                      </strong>
+                      {word}
+                    </span>
+                  ))}
+              </div>
+            </div>
+          )}
+          <NoteCompletionGaps
+            lines={q.options ?? []}
+            answer={arrAnswer}
+            onChange={onAnswer}
+            firstQuestionNumber={questionNumber}
+            showBullet={false}
+            appearance="summary"
+            emptyLinePlaceholder="Summary paragraph…"
+          />
+        </div>
       )}
 
       {flowchartGapUi && (
