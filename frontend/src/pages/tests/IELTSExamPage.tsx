@@ -2234,7 +2234,11 @@ const ReadingSection: React.FC<{
                     )}
                   <div
                     data-reading-passage-segment={segmentIndex}
-                    className="[&>*:first-child]:mt-0"
+                    className={`[&>*:first-child]:mt-0 ${
+                      isClientShowcase
+                        ? "[&_section]:mb-6 [&_section:last-child]:mb-0 [&_section>h3]:mt-0 [&_section>h3]:mb-2 [&_section>h3]:text-lg [&_section>h3]:font-bold [&_section>h3]:leading-snug [&_section>h3]:text-gray-950 [&_section>p]:mb-0"
+                        : ""
+                    }`}
                     dangerouslySetInnerHTML={{ __html: segment }}
                   />
                 </React.Fragment>
