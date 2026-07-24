@@ -181,6 +181,10 @@ const App: React.FC = () => {
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route
+          path="/client-preview/reading-part-1"
+          element={<IELTSExamPage showcase />}
+        />
 
         {/* Protected routes with main layout */}
         <Route

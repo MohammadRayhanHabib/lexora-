@@ -57,13 +57,9 @@ const NoteCompletionGaps: React.FC<NoteCompletionGapsProps> = ({
 
   const renderGap = (globalIdx: number, variant: "suffix" | "inline") => {
     const qn = firstQuestionNumber + globalIdx;
-    const hasValue = vals[globalIdx].trim().length > 0;
     const boxClass = variant === "suffix" ? gapBoxClassSuffix : gapBoxClassInline;
-    const verticalPadding = hasValue
-      ? variant === "suffix"
-        ? "py-2"
-        : "py-1.5"
-      : variant === "suffix"
+    const verticalPadding =
+      variant === "suffix"
         ? isSummary
           ? "pb-1 pt-4"
           : "pb-1.5 pt-5"
@@ -72,11 +68,9 @@ const NoteCompletionGaps: React.FC<NoteCompletionGapsProps> = ({
           : "pb-1 pt-4";
     return (
       <div key={`g-${globalIdx}`} className={`${boxClass} ${verticalPadding}`}>
-        {!hasValue && (
-          <span className={qnClass} aria-hidden>
-            {qn}
-          </span>
-        )}
+        <span className={qnClass} aria-hidden>
+          {qn}
+        </span>
         <input
           type="text"
           value={vals[globalIdx]}

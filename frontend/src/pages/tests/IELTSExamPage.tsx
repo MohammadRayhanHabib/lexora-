@@ -45,6 +45,12 @@ import {
   WritingSessionMode,
 } from "../../api/writing";
 import { PageLoader } from "../../components/ui/Spinner";
+import {
+  READING_PART_1_SHOWCASE_ATTEMPT,
+  READING_PART_1_SHOWCASE_EXAM,
+  READING_PART_1_SHOWCASE_QUESTIONS,
+  READING_PART_1_SHOWCASE_TEST,
+} from "../../data/readingPart1Showcase";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -89,7 +95,12 @@ interface PendingReadingSelection {
 // Main component
 // ─────────────────────────────────────────────────────────────
 
-const IELTSExamPage: React.FC = () => {
+interface IELTSExamPageProps {
+  /** Local, read-only-data client preview. It never calls or mutates the API. */
+  showcase?: boolean;
+}
+
+const IELTSExamPage: React.FC<IELTSExamPageProps> = ({ showcase = false }) => {
   const { examId } = useParams<{ examId: string }>();
   const navigate = useNavigate();
 
@@ -156,6 +167,24 @@ const IELTSExamPage: React.FC = () => {
 
   // ── Load exam + start attempt ──────────────────────────────
   const initExam = useCallback(async () => {
+    if (showcase) {
+      setExam(READING_PART_1_SHOWCASE_EXAM);
+      setMockAttempt(READING_PART_1_SHOWCASE_ATTEMPT);
+      setReadingParts([
+        {
+          testId: READING_PART_1_SHOWCASE_TEST._id,
+          test: READING_PART_1_SHOWCASE_TEST,
+          questions: READING_PART_1_SHOWCASE_QUESTIONS,
+          attemptId: null,
+          offset: 0,
+        },
+      ]);
+      setReadingSecondsLeft(READING_PART_1_SHOWCASE_EXAM.readingDuration * 60);
+      setActiveQNum(1);
+      setSection("reading");
+      setPageState("ready");
+      return;
+    }
     if (!examId) return;
     try {
       const [examRes, attemptRes] = await Promise.all([
@@ -183,7 +212,7 @@ const IELTSExamPage: React.FC = () => {
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to load exam");
     }
-  }, [examId]);
+  }, [examId, showcase]);
 
   useEffect(() => {
     initExam();
@@ -780,7 +809,9 @@ const IELTSExamPage: React.FC = () => {
           </div>
           <div className="min-w-0 border-l border-gray-300 pl-4 sm:pl-6">
             <p className="truncate text-sm font-bold leading-tight text-gray-900">
-              Candidate {mockAttempt._id.slice(-8).toUpperCase()}
+              {showcase
+                ? "Client Preview"
+                : `Candidate ${mockAttempt._id.slice(-8).toUpperCase()}`}
             </p>
             <p className={`mt-0.5 text-xs font-medium ${timerColor}`}>
               {section === "reading"
@@ -827,7 +858,9 @@ const IELTSExamPage: React.FC = () => {
           />
           <HeaderBtn
             onClick={
-              section === "reading"
+              showcase
+                ? () => toast("Preview mode — answers are not submitted.")
+                : section === "reading"
                 ? submitReadingSection
                 : section === "writing"
                   ? submitWritingSection
@@ -835,7 +868,7 @@ const IELTSExamPage: React.FC = () => {
                     ? submitListeningSection
                     : completeExam
             }
-            label="Submit"
+            label={showcase ? "Preview Only" : "Submit"}
             icon={<FiCheck className="w-3.5 h-3.5" />}
             loading={submitting}
             primary
@@ -847,9 +880,13 @@ const IELTSExamPage: React.FC = () => {
           />
           <HeaderBtn
             onClick={() => {
+              if (showcase) {
+                navigate("/login");
+                return;
+              }
               if (confirm("Save progress and exit?")) navigate("/mock-tests");
             }}
-            label="Save & Exit"
+            label={showcase ? "Exit Preview" : "Save & Exit"}
             icon={<FiLogOut className="w-3.5 h-3.5" />}
           />
           <button
