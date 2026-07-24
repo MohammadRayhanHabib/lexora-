@@ -2741,14 +2741,17 @@ const ReadingSection: React.FC<{
               )}
 
               {/* Clear */}
-              {(strAns ||
-                arrAns.some((x) => String(x ?? "").trim().length > 0) ||
-                (flowchartGapUi &&
-                  flowVals.some((x) => String(x ?? "").trim().length > 0)) ||
-                (tableGapUi &&
-                  tableVals.some((x) => String(x ?? "").trim().length > 0)) ||
-                (diagramGapUi &&
-                  diagramVals.some((x) => String(x ?? "").trim().length > 0))) && (
+              {!isClientShowcase &&
+                (strAns ||
+                  arrAns.some((x) => String(x ?? "").trim().length > 0) ||
+                  (flowchartGapUi &&
+                    flowVals.some((x) => String(x ?? "").trim().length > 0)) ||
+                  (tableGapUi &&
+                    tableVals.some((x) => String(x ?? "").trim().length > 0)) ||
+                  (diagramGapUi &&
+                    diagramVals.some(
+                      (x) => String(x ?? "").trim().length > 0,
+                    ))) && (
                 <button
                   onClick={() =>
                     currentQ.questionType ===
