@@ -38,13 +38,22 @@ client can review and approve the mock-test UI.
 - Browser console check returned no errors.
 - Cloudflare Pages redirect rules were included in the frontend production
   build output.
+- Deployed the production frontend assets to Cloudflare Pages as
+  `lexora-reading-preview`.
+- Verified the public root redirects to
+  `https://lexora-reading-preview.pages.dev/client-preview/reading-part-1`.
+- Verified the live page shows the client-preview header, Reading Part 1,
+  questions 1-18, and no browser console errors.
 
 ## Known limitations / follow-up
 
 - This is a non-persistent UI approval preview; answers are intentionally not
   submitted to the backend.
-- Future pushes to the connected production branch will create newer preview
-  deployments; Git history retains the previous version for rollback.
+- The initial Cloudflare deployment uses direct upload because the dashboard
+  session did not complete the GitHub connection. Git pushes do not yet
+  redeploy the Pages project automatically.
+- Future preview updates require another direct upload until GitHub integration
+  is connected in the Pages project.
 - After client approval, the examples can be entered through the admin/backend
   flow as real exam content.
 
