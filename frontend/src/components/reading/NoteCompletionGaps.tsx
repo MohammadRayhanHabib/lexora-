@@ -45,6 +45,7 @@ const NoteCompletionGaps: React.FC<NoteCompletionGapsProps> = ({
   };
 
   const isSummary = appearance === "summary";
+  const resolvedLineTextClassName = lineTextClassName || "text-sm";
   const gapBoxClassSuffix = isSummary
     ? "flex shrink-0 min-h-[42px] min-w-[min(100%,210px)] max-w-[280px] items-stretch overflow-hidden rounded-sm border border-dashed border-[#C0504D] bg-[#FCE4E4] shadow-sm"
     : "flex shrink-0 min-h-[44px] min-w-[min(100%,220px)] max-w-[300px] items-stretch overflow-hidden rounded-md border-2 border-dashed border-rose-300 bg-rose-50/60 shadow-sm";
@@ -58,11 +59,14 @@ const NoteCompletionGaps: React.FC<NoteCompletionGapsProps> = ({
   const renderGap = (globalIdx: number, variant: "suffix" | "inline") => {
     const qn = firstQuestionNumber + globalIdx;
     const boxClass = variant === "suffix" ? gapBoxClassSuffix : gapBoxClassInline;
+    const hasAnswer = vals[globalIdx].trim().length > 0;
     return (
       <div key={`g-${globalIdx}`} className={boxClass}>
-        <span className={qnClass} aria-hidden>
-          {qn}
-        </span>
+        {!hasAnswer && (
+          <span className={qnClass} aria-hidden>
+            {qn}
+          </span>
+        )}
         <input
           type="text"
           value={vals[globalIdx]}
@@ -70,7 +74,7 @@ const NoteCompletionGaps: React.FC<NoteCompletionGapsProps> = ({
           readOnly={readOnly}
           disabled={readOnly}
           aria-label={`Gap ${qn}`}
-          className="min-w-0 flex-1 bg-transparent px-2.5 py-2 text-center text-sm text-gray-900 placeholder:text-gray-400/70 focus:outline-none focus:ring-0 disabled:cursor-default"
+          className={`min-w-0 flex-1 bg-transparent px-2.5 py-2 text-center text-gray-900 placeholder:text-gray-400/70 focus:outline-none focus:ring-0 disabled:cursor-default ${resolvedLineTextClassName}`}
           placeholder={readOnly ? "—" : "Type here"}
           autoComplete="off"
         />
@@ -92,7 +96,7 @@ const NoteCompletionGaps: React.FC<NoteCompletionGapsProps> = ({
           inner.push(
             <span
               key={`${li}-p-${pi}`}
-              className={`${lineTextClassName} text-sm text-gray-900 leading-relaxed`.trim()}
+              className={`${resolvedLineTextClassName} text-gray-900 leading-relaxed`.trim()}
             >
               {part}
             </span>,

@@ -1304,6 +1304,7 @@ const ShowcaseChoiceQuestionGroup: React.FC<{
   answer: string[];
   onChange: (next: string[]) => void;
   firstQuestionNumber: number;
+  textClassName?: string;
 }> = ({
   questionId,
   questionType,
@@ -1311,6 +1312,7 @@ const ShowcaseChoiceQuestionGroup: React.FC<{
   answer,
   onChange,
   firstQuestionNumber,
+  textClassName = "text-sm",
 }) => {
   const fixedChoices =
     questionType === ReadingQuestionType.TRUE_FALSE_NOT_GIVEN
@@ -1339,7 +1341,9 @@ const ShowcaseChoiceQuestionGroup: React.FC<{
               <span className="flex h-7 min-w-7 shrink-0 items-center justify-center rounded-sm border border-sky-600 bg-sky-50 px-1.5 text-xs font-bold tabular-nums text-gray-950">
                 {questionNumber}
               </span>
-              <p className="pt-0.5 text-sm font-medium leading-relaxed text-gray-900">
+              <p
+                className={`pt-0.5 font-medium leading-relaxed text-gray-900 ${textClassName}`}
+              >
                 {prompt}
               </p>
             </div>
@@ -1355,7 +1359,7 @@ const ShowcaseChoiceQuestionGroup: React.FC<{
                 return (
                   <label
                     key={`${choice}-${choiceIndex}`}
-                    className={`flex cursor-pointer items-start gap-2.5 rounded-sm border px-3 py-2 text-sm transition-colors ${
+                    className={`flex cursor-pointer items-start gap-2.5 rounded-sm border px-3 py-2 transition-colors ${textClassName} ${
                       selected
                         ? "border-sky-600 bg-sky-50 text-gray-950"
                         : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
@@ -1787,6 +1791,16 @@ const ReadingSection: React.FC<{
 
   const fontClass =
     fontSize === "sm" ? "text-sm" : fontSize === "lg" ? "text-lg" : "text-base";
+  const questionFontClass = isClientShowcase
+    ? fontSize === "sm"
+      ? "text-base"
+      : fontSize === "lg"
+        ? "text-xl"
+        : "text-lg"
+    : fontClass;
+  const questionInstructionFontClass = isClientShowcase
+    ? "text-base"
+    : "text-sm";
 
   const activeLocalIndex = currentQ
     ? activePart.questions.findIndex((question) => question._id === currentQ._id)
@@ -2296,7 +2310,9 @@ const ReadingSection: React.FC<{
                     <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-sky-700">
                       Question type
                     </p>
-                    <p className="mt-0.5 text-base font-bold text-gray-950">
+                    <p
+                      className={`mt-0.5 font-bold text-gray-950 ${questionFontClass}`}
+                    >
                       {currentQ.groupLabel}
                     </p>
                   </div>
@@ -2307,7 +2323,7 @@ const ReadingSection: React.FC<{
               )}
 
               {/* Question range */}
-              <p className="font-bold text-gray-900 text-base">
+              <p className={`font-bold text-gray-900 ${questionFontClass}`}>
                 Questions {groupStart}
                 {displayGroupEnd > groupStart ? ` – ${displayGroupEnd}` : ""}
               </p>
@@ -2315,10 +2331,14 @@ const ReadingSection: React.FC<{
               {/* Group instruction */}
               {currentQ.instructions && (
                 <div className="space-y-2">
-                  <p className="text-sm text-gray-800 leading-relaxed font-medium">
+                  <p
+                    className={`${questionInstructionFontClass} text-gray-800 leading-relaxed font-medium`}
+                  >
                     {currentQ.instructions}
                   </p>
-                  <p className="text-sm text-gray-600 leading-relaxed">
+                  <p
+                    className={`${questionInstructionFontClass} text-gray-600 leading-relaxed`}
+                  >
                     {isType(ReadingQuestionType.TRUE_FALSE_NOT_GIVEN) &&
                       "Choose TRUE if the statement agrees with the information given in the text, choose FALSE if the statement contradicts the information, or choose NOT GIVEN if there is no information on this."}
                     {isType(ReadingQuestionType.YES_NO_NOT_GIVEN) &&
@@ -2341,7 +2361,7 @@ const ReadingSection: React.FC<{
               {flowchartGapUi ? (
                 !currentQ.questionText?.trim() ? (
                   <p
-                    className={`text-gray-800 leading-snug font-medium ${fontClass}`}
+                    className={`text-gray-800 leading-snug font-medium ${questionFontClass}`}
                   >
                     Questions {groupStart}
                     {displayGroupEnd > groupStart
@@ -2352,7 +2372,7 @@ const ReadingSection: React.FC<{
               ) : tableGapUi ? (
                 !currentQ.questionText?.trim() ? (
                   <p
-                    className={`text-gray-800 leading-snug font-medium ${fontClass}`}
+                    className={`text-gray-800 leading-snug font-medium ${questionFontClass}`}
                   >
                     Questions {groupStart}
                     {displayGroupEnd > groupStart
@@ -2366,13 +2386,13 @@ const ReadingSection: React.FC<{
                 summaryGapUi ? (
                 currentQ.questionText?.trim() ? (
                   <p
-                    className={`text-gray-800 leading-snug font-bold ${fontClass}`}
+                    className={`text-gray-800 leading-snug font-bold ${questionFontClass}`}
                   >
                     {currentQ.questionText}
                   </p>
                 ) : (
                   <p
-                    className={`text-gray-800 leading-snug font-medium ${fontClass}`}
+                    className={`text-gray-800 leading-snug font-medium ${questionFontClass}`}
                   >
                     Questions {groupStart}
                     {displayGroupEnd > groupStart
@@ -2383,7 +2403,7 @@ const ReadingSection: React.FC<{
               ) : showcaseChoiceGroupUi ? (
                 currentQ.questionText?.trim() ? (
                   <p
-                    className={`text-gray-800 leading-snug font-bold ${fontClass}`}
+                    className={`text-gray-800 leading-snug font-bold ${questionFontClass}`}
                   >
                     {currentQ.questionText}
                   </p>
@@ -2393,13 +2413,13 @@ const ReadingSection: React.FC<{
                   ReadingQuestionType.MATCHING_FEATURES &&
                 currentQ.questionText?.trim() ? (
                   <p
-                    className={`text-gray-800 leading-snug font-bold text-center ${fontClass}`}
+                    className={`text-gray-800 leading-snug font-bold text-center ${questionFontClass}`}
                   >
                     {currentQ.questionText}
                   </p>
                 ) : (
                   <p
-                    className={`text-gray-800 leading-snug font-medium ${fontClass}`}
+                    className={`text-gray-800 leading-snug font-medium ${questionFontClass}`}
                   >
                     Questions {groupStart}
                     {displayGroupEnd > groupStart
@@ -2409,7 +2429,7 @@ const ReadingSection: React.FC<{
                 )
               ) : (
                 <p
-                  className={`text-gray-800 leading-snug font-medium ${fontClass}`}
+                  className={`text-gray-800 leading-snug font-medium ${questionFontClass}`}
                 >
                   {activeQNum}. {currentQ.questionText}
                 </p>
@@ -2429,6 +2449,7 @@ const ReadingSection: React.FC<{
                   }
                   onChange={(next) => setAnswer(currentQ._id, next)}
                   firstQuestionNumber={groupStart}
+                  textClassName={questionFontClass}
                 />
               )}
 
@@ -2457,7 +2478,7 @@ const ReadingSection: React.FC<{
                           <div className="w-2 h-2 rounded-full bg-gray-700" />
                         )}
                       </div>
-                      <span className={`${fontClass} text-gray-800`}>
+                      <span className={`${questionFontClass} text-gray-800`}>
                         {opt}
                       </span>
                     </label>
@@ -2489,7 +2510,7 @@ const ReadingSection: React.FC<{
                       <span className="font-mono text-xs text-gray-500 w-4">
                         {String.fromCharCode(65 + i)}
                       </span>
-                      <span className={`${fontClass} text-gray-800`}>
+                      <span className={`${questionFontClass} text-gray-800`}>
                         {opt}
                       </span>
                     </label>
@@ -2526,7 +2547,7 @@ const ReadingSection: React.FC<{
                       <span className="font-mono text-xs text-gray-500 w-4">
                         {String.fromCharCode(65 + i)}
                       </span>
-                      <span className={`${fontClass} text-gray-800`}>
+                      <span className={`${questionFontClass} text-gray-800`}>
                         {opt}
                       </span>
                     </label>
@@ -2652,7 +2673,7 @@ const ReadingSection: React.FC<{
                   }
                   onChange={(next) => setAnswer(currentQ._id, next)}
                   firstQuestionNumber={groupStart}
-                  lineTextClassName={`${fontClass} text-gray-800`}
+                  lineTextClassName={`${questionFontClass} text-gray-800`}
                   showBullet={!summaryGapUi}
                   appearance={summaryGapUi ? "summary" : "note"}
                   emptyLinePlaceholder={
@@ -2726,7 +2747,7 @@ const ReadingSection: React.FC<{
                   value={strAns}
                   onChange={(e) => setAnswer(currentQ._id, e.target.value)}
                   placeholder="Type your answer here…"
-                  className={`block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 ${fontClass} text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none`}
+                  className={`block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 ${questionFontClass} text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none`}
                 />
               )}
 
@@ -2736,7 +2757,7 @@ const ReadingSection: React.FC<{
                   value={strAns}
                   onChange={(e) => setAnswer(currentQ._id, e.target.value)}
                   placeholder="Type your answer here…"
-                  className={`block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 ${fontClass} text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none`}
+                  className={`block w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 ${questionFontClass} text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none`}
                 />
               )}
 
