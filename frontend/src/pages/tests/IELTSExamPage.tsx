@@ -46,6 +46,7 @@ import {
 } from "../../api/writing";
 import { PageLoader } from "../../components/ui/Spinner";
 import {
+  READING_SHOWCASE_EXAMPLES_PER_TYPE,
   READING_PART_1_SHOWCASE_ATTEMPT,
   READING_PART_1_SHOWCASE_EXAM,
   READING_PART_1_SHOWCASE_QUESTIONS,
@@ -1296,6 +1297,98 @@ const ReadingHeadingDropZone: React.FC<{
   );
 };
 
+const ShowcaseChoiceQuestionGroup: React.FC<{
+  questionId: string;
+  questionType: ReadingQuestionType;
+  rows: string[];
+  answer: string[];
+  onChange: (next: string[]) => void;
+  firstQuestionNumber: number;
+}> = ({
+  questionId,
+  questionType,
+  rows,
+  answer,
+  onChange,
+  firstQuestionNumber,
+}) => {
+  const fixedChoices =
+    questionType === ReadingQuestionType.TRUE_FALSE_NOT_GIVEN
+      ? TFNG_OPTS
+      : questionType === ReadingQuestionType.YES_NO_NOT_GIVEN
+        ? YNNG_OPTS
+        : null;
+  const normalizedAnswers = Array.from({ length: rows.length }, (_, index) =>
+    String(answer[index] ?? ""),
+  );
+
+  return (
+    <div className="space-y-5">
+      {rows.map((row, rowIndex) => {
+        const [prompt = "", ...encodedChoices] = row.split("|||");
+        const choices = fixedChoices ?? encodedChoices;
+        const questionNumber = firstQuestionNumber + rowIndex;
+
+        return (
+          <fieldset
+            key={`${questionId}-${rowIndex}`}
+            className="rounded-md border border-gray-200 bg-white p-4 shadow-sm"
+          >
+            <legend className="sr-only">Question {questionNumber}</legend>
+            <div className="mb-3 flex items-start gap-3">
+              <span className="flex h-7 min-w-7 shrink-0 items-center justify-center rounded-sm border border-sky-600 bg-sky-50 px-1.5 text-xs font-bold tabular-nums text-gray-950">
+                {questionNumber}
+              </span>
+              <p className="pt-0.5 text-sm font-medium leading-relaxed text-gray-900">
+                {prompt}
+              </p>
+            </div>
+            <div
+              className={
+                fixedChoices
+                  ? "grid gap-2 pl-10 sm:grid-cols-3"
+                  : "space-y-2 pl-10"
+              }
+            >
+              {choices.map((choice, choiceIndex) => {
+                const selected = normalizedAnswers[rowIndex] === choice;
+                return (
+                  <label
+                    key={`${choice}-${choiceIndex}`}
+                    className={`flex cursor-pointer items-start gap-2.5 rounded-sm border px-3 py-2 text-sm transition-colors ${
+                      selected
+                        ? "border-sky-600 bg-sky-50 text-gray-950"
+                        : "border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name={`${questionId}-${rowIndex}`}
+                      checked={selected}
+                      onChange={() => {
+                        const next = [...normalizedAnswers];
+                        next[rowIndex] = choice;
+                        onChange(next);
+                      }}
+                      className="mt-0.5 h-4 w-4 accent-gray-900"
+                    />
+                    {!fixedChoices && (
+                      <span className="font-semibold text-gray-500">
+                        {String.fromCharCode(65 + choiceIndex)}
+                      </span>
+                    )}
+                    <span>{choice}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+        );
+      })}
+    </div>
+  );
+};
+
 const CompactReadingQuestion: React.FC<{
   question: IReadingQuestionStudent;
   questionNumber: number;
@@ -1414,11 +1507,12 @@ interface IeltsFlowchartCompletionPanelProps {
   hints: string[];
   answer: string[];
   onChange: (next: string[]) => void;
+  firstQuestionNumber: number;
 }
 
 const IeltsFlowchartCompletionPanel: React.FC<
   IeltsFlowchartCompletionPanelProps
-> = ({ title, rows, hints, answer, onChange }) => {
+> = ({ title, rows, hints, answer, onChange, firstQuestionNumber }) => {
   const gapCount = countFlowchartGapTokens(rows);
   const vals = Array.from({ length: gapCount }, (_, i) =>
     String(answer[i] ?? ""),
@@ -1458,7 +1552,11 @@ const IeltsFlowchartCompletionPanel: React.FC<
                     {pi < parts.length - 1 ? (
                       <span className="inline-flex flex-col items-center mx-1 shrink-0 align-baseline">
                         <span className="text-[11px] font-bold text-rose-900 tabular-nums leading-none mb-0.5">
-                          ({ieltsFlowchartGapsBeforeRow(rows, ri) + pi + 1})
+                          (
+                          {firstQuestionNumber +
+                            ieltsFlowchartGapsBeforeRow(rows, ri) +
+                            pi}
+                          )
                         </span>
                         <input
                           type="text"
@@ -1471,7 +1569,11 @@ const IeltsFlowchartCompletionPanel: React.FC<
                               e.target.value,
                             )
                           }
-                          aria-label={`Flowchart gap ${ieltsFlowchartGapsBeforeRow(rows, ri) + pi + 1}`}
+                          aria-label={`Flowchart gap ${
+                            firstQuestionNumber +
+                            ieltsFlowchartGapsBeforeRow(rows, ri) +
+                            pi
+                          }`}
                           className="w-[min(12rem,85vw)] min-w-[7rem] rounded-md border-2 border-dashed border-rose-300 bg-rose-50/70 px-2 py-1 text-center text-sm text-gray-900 placeholder:text-rose-400/70 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-200"
                           placeholder="······"
                           autoComplete="off"
@@ -1537,6 +1639,9 @@ const ReadingSection: React.FC<{
 }) => {
   const activePart = getActivePart();
   const currentQ = getActiveQuestion();
+  const isClientShowcase =
+    activePart.test.createdBy === "client-preview" &&
+    activePart.test._id === READING_PART_1_SHOWCASE_TEST._id;
   const splitContainerRef = useRef<HTMLDivElement | null>(null);
   const passageContentRef = useRef<HTMLDivElement | null>(null);
   const selectionToolbarRef = useRef<HTMLDivElement | null>(null);
@@ -1551,23 +1656,26 @@ const ReadingSection: React.FC<{
   const [selectionNoteDraft, setSelectionNoteDraft] = useState("");
 
   // Question group (group all questions with same groupLabel)
-  const groupStart = currentQ?.groupLabel
-    ? activePart.questions.findIndex(
-        (q) => q.groupLabel === currentQ.groupLabel,
-      ) +
-      activePart.offset +
-      1
-    : activeQNum;
+  const groupStart = isClientShowcase
+    ? (currentQ?.pageNumber ?? activeQNum)
+    : currentQ?.groupLabel
+      ? activePart.questions.findIndex(
+          (q) => q.groupLabel === currentQ.groupLabel,
+        ) +
+        activePart.offset +
+        1
+      : activeQNum;
   const groupEnd = currentQ?.groupLabel
     ? activePart.offset +
       activePart.questions.filter((q) => q.groupLabel === currentQ.groupLabel)
         .length +
       (groupStart - activePart.offset - 1)
     : activeQNum;
-  const displayGroupEnd =
-    currentQ?.questionType === ReadingQuestionType.MATCHING_HEADINGS ||
-    currentQ?.questionType ===
-      ReadingQuestionType.MATCHING_SENTENCE_ENDINGS
+  const displayGroupEnd = isClientShowcase
+    ? groupStart + READING_SHOWCASE_EXAMPLES_PER_TYPE - 1
+    : currentQ?.questionType === ReadingQuestionType.MATCHING_HEADINGS ||
+        currentQ?.questionType ===
+          ReadingQuestionType.MATCHING_SENTENCE_ENDINGS
       ? Math.max(
           groupEnd,
           groupStart + Math.max(1, currentQ.options?.length ?? 1) - 1,
@@ -1640,14 +1748,28 @@ const ReadingSection: React.FC<{
     currentQ?.questionType === ReadingQuestionType.SHORT_ANSWER &&
     (currentQ.options?.length ?? 0) > 0;
 
+  const sentenceCompletionGapUi =
+    currentQ?.questionType === ReadingQuestionType.SENTENCE_COMPLETION &&
+    countNoteCompletionGaps(currentQ.options ?? []) > 0;
+
   const summaryGapUi =
     currentQ?.questionType === ReadingQuestionType.SUMMARY_COMPLETION &&
     countNoteCompletionGaps(currentQ.options ?? []) > 0;
+
+  const showcaseChoiceGroupUi =
+    isClientShowcase &&
+    currentQ != null &&
+    (currentQ.questionType === ReadingQuestionType.YES_NO_NOT_GIVEN ||
+      currentQ.questionType === ReadingQuestionType.TRUE_FALSE_NOT_GIVEN ||
+      currentQ.questionType === ReadingQuestionType.TITLE_SUBTITLE_FINDING ||
+      currentQ.questionType === ReadingQuestionType.MCQ_SINGLE) &&
+    (currentQ.options?.length ?? 0) > 0;
 
   const noteCompletionGapCount =
     currentQ &&
     (currentQ.questionType === ReadingQuestionType.NOTE_COMPLETION ||
       shortAnswerGapUi ||
+      sentenceCompletionGapUi ||
       summaryGapUi)
       ? countNoteCompletionGaps(currentQ.options ?? [])
       : 0;
@@ -1925,8 +2047,10 @@ const ReadingSection: React.FC<{
   const activePartIndex = parts.findIndex(
     (part) => part.testId === activePart.testId,
   );
-  const partStart = activePart.offset + 1;
-  const partEnd = activePart.offset + activePart.questions.length;
+  const partStart = isClientShowcase ? 1 : activePart.offset + 1;
+  const partEnd = isClientShowcase
+    ? activePart.test.totalQuestions
+    : activePart.offset + activePart.questions.length;
 
   return (
     <div ref={splitContainerRef} className="flex h-full flex-col overflow-hidden bg-white">
@@ -2088,7 +2212,9 @@ const ReadingSection: React.FC<{
                           setSelectedHeadingLetter(null)
                         }
                         firstQuestionNumber={
-                          activePart.offset + matchingHeadingLocalIndex + 1
+                          isClientShowcase
+                            ? (matchingHeadingQuestion.pageNumber ?? groupStart)
+                            : activePart.offset + matchingHeadingLocalIndex + 1
                         }
                       />
                     )}
@@ -2164,6 +2290,22 @@ const ReadingSection: React.FC<{
           )}
           {currentQ ? (
             <div className="mx-auto max-w-[760px] space-y-5 pr-10">
+              {isClientShowcase && currentQ.groupLabel && (
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-sky-200 bg-sky-50 px-4 py-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-sky-700">
+                      Question type
+                    </p>
+                    <p className="mt-0.5 text-base font-bold text-gray-950">
+                      {currentQ.groupLabel}
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-sky-200 bg-white px-3 py-1 text-xs font-semibold text-sky-800">
+                    {READING_SHOWCASE_EXAMPLES_PER_TYPE} examples
+                  </span>
+                </div>
+              )}
+
               {/* Question range */}
               <p className="font-bold text-gray-900 text-base">
                 Questions {groupStart}
@@ -2220,6 +2362,7 @@ const ReadingSection: React.FC<{
                 ) : null
               ) : isType(ReadingQuestionType.NOTE_COMPLETION) ||
                 shortAnswerGapUi ||
+                sentenceCompletionGapUi ||
                 summaryGapUi ? (
                 currentQ.questionText?.trim() ? (
                   <p
@@ -2237,6 +2380,14 @@ const ReadingSection: React.FC<{
                       : ""}
                   </p>
                 )
+              ) : showcaseChoiceGroupUi ? (
+                currentQ.questionText?.trim() ? (
+                  <p
+                    className={`text-gray-800 leading-snug font-bold ${fontClass}`}
+                  >
+                    {currentQ.questionText}
+                  </p>
+                ) : null
               ) : statementOrListMatchingStemUi ? (
                 currentQ.questionType ===
                   ReadingQuestionType.MATCHING_FEATURES &&
@@ -2266,9 +2417,25 @@ const ReadingSection: React.FC<{
 
               {/* ── Answer inputs ── */}
 
+              {showcaseChoiceGroupUi && (
+                <ShowcaseChoiceQuestionGroup
+                  questionId={currentQ._id}
+                  questionType={currentQ.questionType}
+                  rows={currentQ.options ?? []}
+                  answer={
+                    Array.isArray(answers[currentQ._id])
+                      ? (answers[currentQ._id] as string[])
+                      : []
+                  }
+                  onChange={(next) => setAnswer(currentQ._id, next)}
+                  firstQuestionNumber={groupStart}
+                />
+              )}
+
               {/* TRUE / FALSE / NOT GIVEN */}
-              {(isType(ReadingQuestionType.TRUE_FALSE_NOT_GIVEN) ||
-                isType(ReadingQuestionType.YES_NO_NOT_GIVEN)) && (
+              {!showcaseChoiceGroupUi &&
+                (isType(ReadingQuestionType.TRUE_FALSE_NOT_GIVEN) ||
+                  isType(ReadingQuestionType.YES_NO_NOT_GIVEN)) && (
                 <div className="space-y-2">
                   {(isType(ReadingQuestionType.YES_NO_NOT_GIVEN)
                     ? YNNG_OPTS
@@ -2299,8 +2466,9 @@ const ReadingSection: React.FC<{
               )}
 
               {/* MCQ Single */}
-              {(isType(ReadingQuestionType.MCQ_SINGLE) ||
-                isType(ReadingQuestionType.TITLE_SUBTITLE_FINDING)) && (
+              {!showcaseChoiceGroupUi &&
+                (isType(ReadingQuestionType.MCQ_SINGLE) ||
+                  isType(ReadingQuestionType.TITLE_SUBTITLE_FINDING)) && (
                 <div className="space-y-2">
                   {(currentQ.options ?? []).map((opt, i) => (
                     <label
@@ -2473,6 +2641,7 @@ const ReadingSection: React.FC<{
               {/* Note completion — typable dashed gaps */}
               {(isType(ReadingQuestionType.NOTE_COMPLETION) ||
                 shortAnswerGapUi ||
+                sentenceCompletionGapUi ||
                 summaryGapUi) && (
                 <NoteCompletionGaps
                   lines={currentQ.options ?? []}
@@ -2502,6 +2671,7 @@ const ReadingSection: React.FC<{
                   )}
                   answer={flowVals}
                   onChange={(next) => setAnswer(currentQ._id, next)}
+                  firstQuestionNumber={groupStart}
                 />
               )}
 
@@ -2546,7 +2716,11 @@ const ReadingSection: React.FC<{
                   isType(ReadingQuestionType.TABLE_COMPLETION) && tableGapUi
                 ) &&
                 !(diagramGapUi && isType(ReadingQuestionType.DIAGRAM_LABEL_COMPLETION)) &&
-                !(shortAnswerGapUi && isType(ReadingQuestionType.SHORT_ANSWER)) && (
+                !(shortAnswerGapUi && isType(ReadingQuestionType.SHORT_ANSWER)) &&
+                !(
+                  sentenceCompletionGapUi &&
+                  isType(ReadingQuestionType.SENTENCE_COMPLETION)
+                ) && (
                 <input
                   type="text"
                   value={strAns}
@@ -2581,6 +2755,9 @@ const ReadingSection: React.FC<{
                       ReadingQuestionType.NOTE_COMPLETION ||
                     (currentQ.questionType === ReadingQuestionType.SHORT_ANSWER &&
                       shortAnswerGapUi) ||
+                    (currentQ.questionType ===
+                      ReadingQuestionType.SENTENCE_COMPLETION &&
+                      sentenceCompletionGapUi) ||
                     (currentQ.questionType === ReadingQuestionType.SUMMARY_COMPLETION &&
                       summaryGapUi)
                       ? setAnswer(
@@ -2589,6 +2766,11 @@ const ReadingSection: React.FC<{
                             Math.max(0, noteCompletionGapCount),
                           ).fill(""),
                         )
+                      : showcaseChoiceGroupUi
+                        ? setAnswer(
+                            currentQ._id,
+                            new Array(currentQ.options?.length ?? 0).fill(""),
+                          )
                       : flowchartGapUi
                         ? setAnswer(
                             currentQ._id,
@@ -2695,6 +2877,9 @@ const ReadingBottomNav: React.FC<{
         {parts.map((part, partIndex) => {
           const start = part.offset + 1;
           const end = part.offset + part.questions.length;
+          const showcasePart =
+            part.test.createdBy === "client-preview" &&
+            part.test._id === READING_PART_1_SHOWCASE_TEST._id;
           const numbers = Array.from(
             { length: part.questions.length },
             (_, index) => start + index,
@@ -2705,7 +2890,7 @@ const ReadingBottomNav: React.FC<{
           return (
             <div
               key={part.testId}
-              className={`min-w-[260px] shrink-0 border-t-4 pt-2 ${
+              className={`${showcasePart ? "min-w-[740px]" : "min-w-[260px]"} shrink-0 border-t-4 pt-2 ${
                 isCurrentPart ? "border-[#b30d2f]" : "border-gray-200"
               }`}
             >
@@ -2719,20 +2904,37 @@ const ReadingBottomNav: React.FC<{
                 </button>
                 <span className="text-xs text-gray-500">
                   {answeredCount} of {numbers.length}
+                  {showcasePart ? " types reviewed" : ""}
                 </span>
               </div>
-              <div className="flex items-center gap-1">
-                {numbers.map((number) => {
+              <div className="flex items-center gap-1.5">
+                {numbers.map((number, questionIndex) => {
                   const active = number === activeQNum;
                   const answered = isAnswered(number);
                   const flagged = flaggedQuestions.has(number);
+                  const showcaseLabel = part.questions[
+                    questionIndex
+                  ]?.groupLabel
+                    ?.split("·")[0]
+                    ?.trim();
                   return (
                     <button
                       key={number}
                       type="button"
                       onClick={() => setActiveQNum(number)}
-                      aria-label={`Question ${number}${answered ? ", answered" : ""}${flagged ? ", flagged" : ""}`}
-                      className={`relative flex h-8 min-w-7 items-center justify-center rounded-sm px-1 text-xs font-semibold transition-colors ${
+                      aria-label={
+                        showcasePart
+                          ? `Question type ${showcaseLabel ?? number}${answered ? ", reviewed" : ""}${flagged ? ", flagged" : ""}`
+                          : `Question ${number}${answered ? ", answered" : ""}${flagged ? ", flagged" : ""}`
+                      }
+                      title={
+                        showcasePart
+                          ? part.questions[questionIndex]?.groupLabel
+                          : undefined
+                      }
+                      className={`relative flex h-8 items-center justify-center rounded-sm px-1 text-xs font-semibold transition-colors ${
+                        showcasePart ? "min-w-11" : "min-w-7"
+                      } ${
                         active
                           ? "border-2 border-sky-600 bg-white text-gray-950"
                           : answered
@@ -2740,7 +2942,7 @@ const ReadingBottomNav: React.FC<{
                             : "text-gray-700 hover:bg-gray-100"
                       }`}
                     >
-                      {number}
+                      {showcasePart ? showcaseLabel : number}
                       {flagged && (
                         <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border border-white bg-amber-500" />
                       )}
