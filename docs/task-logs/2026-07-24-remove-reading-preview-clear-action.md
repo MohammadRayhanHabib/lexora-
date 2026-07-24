@@ -22,12 +22,16 @@ Remove the `Clear answer` control from the client-facing Reading preview.
 - Docker production frontend build completed successfully.
 - Local client-preview interaction was checked after entering an answer; the
   `Clear answer` control was absent.
+- The implementation commit was pushed to the remote `main` branch.
+- The existing public preview was checked and still serves the previous build.
 
 ## Known limitations or follow-up work
 
 - The dedicated Cloudflare Pages preview uses direct uploads, so future changes
   still require a new deployment.
+- Cloudflare dashboard/OAuth access was unavailable during this task, so the
+  public Pages deployment still needs to be updated from the verified build.
 
 ## Final status
 
-Implemented and locally validated; ready for deployment.
+Implemented, locally validated, and pushed. Public Pages rollout is pending.
