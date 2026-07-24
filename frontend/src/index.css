@@ -53,6 +53,36 @@ body {
   @apply bg-gray-400;
 }
 
+/* IELTS-style split-panel scrollbars used only by the Reading client preview. */
+.ielts-reading-scrollbar {
+  scrollbar-width: auto;
+  scrollbar-color: #737373 #eeeeee;
+}
+
+.ielts-reading-scrollbar::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+.ielts-reading-scrollbar::-webkit-scrollbar-track {
+  background: #eeeeee;
+}
+
+.ielts-reading-scrollbar::-webkit-scrollbar-thumb {
+  min-height: 96px;
+  border: 0;
+  border-radius: 0;
+  background: #737373;
+}
+
+.ielts-reading-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #5f5f5f;
+}
+
+.ielts-reading-scrollbar::-webkit-scrollbar-corner {
+  background: #eeeeee;
+}
+
 /* ── Selection ──────────────────────────────────────── */
 ::selection {
   @apply bg-primary-200 text-primary-900;

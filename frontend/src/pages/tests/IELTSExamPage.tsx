@@ -2187,7 +2187,11 @@ const ReadingSection: React.FC<{
         </div>
 
         {/* Passage card */}
-        <div className="flex-1 overflow-y-auto bg-white px-6 py-7 lg:px-8">
+        <div
+          className={`flex-1 overflow-y-auto bg-white px-6 py-7 lg:px-8 ${
+            isClientShowcase ? "ielts-reading-scrollbar" : ""
+          }`}
+        >
           <div className="mx-auto max-w-[780px]">
             <h2
               className={`mb-5 font-bold text-gray-950 ${fontSize === "lg" ? "text-2xl" : "text-xl"}`}
@@ -2249,7 +2253,11 @@ const ReadingSection: React.FC<{
       </div>
 
       {/* Middle draggable divider */}
-      <div className="group relative w-4 shrink-0 bg-gray-100">
+      <div
+        className={`group relative shrink-0 ${
+          isClientShowcase ? "w-2 bg-gray-200" : "w-4 bg-gray-100"
+        }`}
+      >
         <button
           type="button"
           role="separator"
@@ -2271,9 +2279,19 @@ const ReadingSection: React.FC<{
               setLeftWidthPct((w) => Math.min(75, w + 2));
             }
           }}
-          className="absolute inset-y-0 left-1/2 flex w-1.5 -translate-x-1/2 cursor-col-resize items-center justify-center bg-gray-400 text-[10px] font-bold text-gray-900 transition-colors hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-[#b30d2f]/25"
+          className={`absolute inset-y-0 left-1/2 z-20 flex -translate-x-1/2 cursor-col-resize items-center justify-center font-bold text-gray-950 transition-colors focus:outline-none focus:ring-2 focus:ring-[#b30d2f]/25 ${
+            isClientShowcase
+              ? "w-1 bg-gray-300 text-sm hover:bg-gray-500"
+              : "w-1.5 bg-gray-400 text-[10px] hover:bg-gray-500"
+          }`}
         >
-          <span className="absolute flex h-9 w-9 items-center justify-center border border-gray-500 bg-white shadow-sm">
+          <span
+            className={`absolute flex items-center justify-center bg-white ${
+              isClientShowcase
+                ? "h-8 w-8 border border-gray-950 text-sm shadow-none"
+                : "h-9 w-9 border border-gray-500 shadow-sm"
+            }`}
+          >
             ↔
           </span>
         </button>
@@ -2284,7 +2302,11 @@ const ReadingSection: React.FC<{
         style={{ width: `${100 - leftWidthPct}%` }}
         className="flex flex-col bg-white min-w-0"
       >
-        <div className="relative flex-1 overflow-y-auto px-6 pb-8 pt-7 lg:px-8">
+        <div
+          className={`relative flex-1 overflow-y-auto px-6 pb-8 pt-7 lg:px-8 ${
+            isClientShowcase ? "ielts-reading-scrollbar" : ""
+          }`}
+        >
           {currentQ && (
             <button
               type="button"
