@@ -3,8 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import toast from "react-hot-toast";
 import {
-  FiChevronLeft,
-  FiChevronRight,
+  FiArrowLeft,
+  FiArrowRight,
   FiPause,
   FiPlay,
   FiSettings,
@@ -2895,7 +2895,7 @@ const ReadingSection: React.FC<{
             className="box-border flex h-16 min-h-16 w-16 min-w-16 shrink-0 items-center justify-center rounded-sm border-0 bg-gray-800 p-0 text-white transition-colors hover:bg-black disabled:bg-gray-200 disabled:text-white"
             aria-label="Previous question"
           >
-            <FiChevronLeft className="h-10 w-10 stroke-[3]" />
+            <FiArrowLeft className="h-8 w-8 stroke-[3.5]" />
           </button>
           <button
             onClick={() =>
@@ -2905,7 +2905,7 @@ const ReadingSection: React.FC<{
             className="box-border flex h-16 min-h-16 w-16 min-w-16 shrink-0 items-center justify-center rounded-sm border-0 bg-black p-0 text-white transition-colors hover:bg-gray-800 disabled:bg-gray-200 disabled:text-white"
             aria-label="Next question"
           >
-            <FiChevronRight className="h-10 w-10 stroke-[3]" />
+            <FiArrowRight className="h-8 w-8 stroke-[3.5]" />
           </button>
         </div>
       </div>
