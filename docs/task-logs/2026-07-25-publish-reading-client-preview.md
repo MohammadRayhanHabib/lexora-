@@ -22,12 +22,23 @@ them so the client can review the hosted preview.
 ## Validation
 
 - Frontend production build passed (`npm.cmd run build`).
-- Pending GitHub push and Cloudflare Pages verification.
+- Release commit `edf3c33` was pushed to `origin/main`.
+- Cloudflare Pages reported a successful production deployment at
+  `https://lexora-reading-preview.pages.dev`.
+- The live `/client-preview/reading-part-1` route shows the new R-01 prompt and
+  official-style list layout.
+- Live browser measurements confirmed both navigation buttons are 56 by 56
+  pixels, with a grey disabled Previous button and black active Next button.
+- The live page reported no browser console errors during verification.
 
 ## Known limitations or follow-up work
 
-- Pending deployment result.
+- The existing Git connection did not automatically create a new deployment
+  after the push, so this release was deployed with Cloudflare Pages' manual
+  production-upload flow. Automatic builds should be reviewed before relying
+  on push-to-deploy for future releases.
+- Unrelated local Docker changes remain outside the release commits.
 
 ## Final status
 
-In progress.
+Completed.
