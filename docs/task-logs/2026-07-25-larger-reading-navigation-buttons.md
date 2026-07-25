@@ -28,10 +28,17 @@ larger, matching the supplied reference.
 - The disabled Previous button remained grey and the active Next button
   remained black.
 - No browser console errors were reported during validation.
+- Release commit `1779f12` was pushed to `origin/main`.
+- Cloudflare Pages reported a successful production deployment at
+  `https://lexora-reading-preview.pages.dev`.
+- Live deployment measurements matched the local 64-by-64-pixel buttons and
+  40-by-40-pixel arrow icons, with no console errors.
 
 ## Known limitations or follow-up work
 
-- Changes are local until separately committed, pushed, and deployed.
+- The Pages project currently uses manual production uploads for these releases;
+  automatic push-to-deploy should be reviewed before relying on it.
+- Unrelated local Docker changes remain outside the release commits.
 
 ## Final status
 
