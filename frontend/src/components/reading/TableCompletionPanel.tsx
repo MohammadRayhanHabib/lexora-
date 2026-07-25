@@ -102,62 +102,47 @@ const TableCompletionPanel: React.FC<TableCompletionPanelProps> = ({
                       className="px-3 py-2.5 align-top border-r border-gray-100 last:border-r-0"
                     >
                       <div className="flex flex-wrap items-center gap-x-1 gap-y-1.5 leading-relaxed">
-                        {parts.map((part, pi) => (
-                          <React.Fragment key={`${ri}-${ci}-${pi}`}>
-                            {part ? (
-                              <span className="whitespace-pre-wrap">{part}</span>
-                            ) : null}
-                            {pi < parts.length - 1 ? (
-                              <span className="inline-flex min-w-0 max-w-full flex-1 items-stretch rounded-md border-2 border-dashed border-rose-300 bg-rose-50/70 min-h-[2.25rem]">
-                                <span className="flex shrink-0 items-center border-r border-rose-200/80 px-2 text-sm font-bold tabular-nums text-gray-900">
-                                  {firstQuestionNumber +
-                                    tableGapIndexBefore(
-                                      bodyRows,
-                                      ri,
-                                      ci,
-                                      pi,
-                                    )}
+                        {parts.map((part, pi) => {
+                          const gapIndex = tableGapIndexBefore(
+                            bodyRows,
+                            ri,
+                            ci,
+                            pi,
+                          );
+                          const questionNumber =
+                            firstQuestionNumber + gapIndex;
+                          const gapValue = vals[gapIndex] ?? "";
+
+                          return (
+                            <React.Fragment key={`${ri}-${ci}-${pi}`}>
+                              {part ? (
+                                <span className="whitespace-pre-wrap">
+                                  {part}
                                 </span>
-                                <input
-                                  type="text"
-                                  value={
-                                    vals[
-                                      tableGapIndexBefore(
-                                        bodyRows,
-                                        ri,
-                                        ci,
-                                        pi,
-                                      )
-                                    ] ?? ""
-                                  }
-                                  onChange={(e) =>
-                                    setVal(
-                                      tableGapIndexBefore(
-                                        bodyRows,
-                                        ri,
-                                        ci,
-                                        pi,
-                                      ),
-                                      e.target.value,
-                                    )
-                                  }
-                                  aria-label={`Question ${
-                                    firstQuestionNumber +
-                                    tableGapIndexBefore(
-                                      bodyRows,
-                                      ri,
-                                      ci,
-                                      pi,
-                                    )
-                                  }`}
-                                  className="min-w-0 flex-1 bg-transparent px-2 py-1.5 text-center text-sm text-gray-900 placeholder:text-rose-400/70 focus:outline-none focus:ring-0"
-                                  placeholder="······"
-                                  autoComplete="off"
-                                />
-                              </span>
-                            ) : null}
-                          </React.Fragment>
-                        ))}
+                              ) : null}
+                              {pi < parts.length - 1 ? (
+                                <span className="relative inline-flex min-h-[2.25rem] min-w-0 max-w-full flex-1 items-stretch rounded-md border-2 border-dashed border-rose-300 bg-rose-50/70">
+                                  {!gapValue.trim() ? (
+                                    <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-bold tabular-nums text-gray-900">
+                                      {questionNumber}
+                                    </span>
+                                  ) : null}
+                                  <input
+                                    type="text"
+                                    value={gapValue}
+                                    onChange={(e) =>
+                                      setVal(gapIndex, e.target.value)
+                                    }
+                                    aria-label={`Question ${questionNumber}`}
+                                    className="relative z-[1] min-w-0 flex-1 bg-transparent px-2 py-1.5 text-center text-sm text-gray-900 focus:outline-none focus:ring-0"
+                                    placeholder=""
+                                    autoComplete="off"
+                                  />
+                                </span>
+                              ) : null}
+                            </React.Fragment>
+                          );
+                        })}
                       </div>
                     </td>
                   );

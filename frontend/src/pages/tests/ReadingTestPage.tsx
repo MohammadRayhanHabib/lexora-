@@ -597,34 +597,39 @@ const FlowchartCompletionPanel: React.FC<FlowchartCompletionPanelProps> = ({
                 </div>
               )}
               <div className="rounded-lg border border-gray-200 bg-gradient-to-b from-gray-50/90 to-white px-3 py-3 text-sm text-gray-900 leading-relaxed flex flex-wrap items-center justify-center gap-x-1 gap-y-2 text-center min-h-[2.5rem]">
-                {parts.map((part, pi) => (
-                  <React.Fragment key={`${ri}-${pi}`}>
-                    {part ? (
-                      <span className="whitespace-pre-wrap">{part}</span>
-                    ) : null}
-                    {pi < parts.length - 1 ? (
-                      <span className="inline-flex flex-col items-center mx-1 shrink-0 align-baseline">
-                        <span className="text-[11px] font-bold text-rose-900 tabular-nums leading-none mb-0.5">
-                          ({flowchartGapsBeforeRow(rows, ri) + pi + 1})
+                {parts.map((part, pi) => {
+                  const gapIndex = flowchartGapsBeforeRow(rows, ri) + pi;
+                  const questionNumber = gapIndex + 1;
+                  const gapValue = vals[gapIndex] ?? "";
+
+                  return (
+                    <React.Fragment key={`${ri}-${pi}`}>
+                      {part ? (
+                        <span className="whitespace-pre-wrap">{part}</span>
+                      ) : null}
+                      {pi < parts.length - 1 ? (
+                        <span className="relative mx-1 inline-flex shrink-0 items-stretch align-baseline">
+                          {!gapValue.trim() ? (
+                            <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-bold tabular-nums text-rose-900">
+                              {questionNumber}
+                            </span>
+                          ) : null}
+                          <input
+                            type="text"
+                            value={gapValue}
+                            onChange={(e) =>
+                              setVal(gapIndex, e.target.value)
+                            }
+                            aria-label={`Flowchart gap ${questionNumber}`}
+                            className="relative z-[1] min-h-10 w-[min(12rem,85vw)] min-w-[7rem] rounded-md border-2 border-dashed border-rose-300 bg-transparent px-2 py-1 text-center text-sm text-gray-900 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-200"
+                            placeholder=""
+                            autoComplete="off"
+                          />
                         </span>
-                        <input
-                          type="text"
-                          value={vals[flowchartGapsBeforeRow(rows, ri) + pi] ?? ""}
-                          onChange={(e) =>
-                            setVal(
-                              flowchartGapsBeforeRow(rows, ri) + pi,
-                              e.target.value,
-                            )
-                          }
-                          aria-label={`Flowchart gap ${flowchartGapsBeforeRow(rows, ri) + pi + 1}`}
-                          className="w-[min(12rem,85vw)] min-w-[7rem] rounded-md border-2 border-dashed border-rose-300 bg-rose-50/70 px-2 py-1 text-center text-sm text-gray-900 placeholder:text-rose-400/70 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-200"
-                          placeholder="······"
-                          autoComplete="off"
-                        />
-                      </span>
-                    ) : null}
-                  </React.Fragment>
-                ))}
+                      ) : null}
+                    </React.Fragment>
+                  );
+                })}
               </div>
             </React.Fragment>
           );
@@ -780,8 +785,20 @@ const QuestionPanel: React.FC<QuestionPanelProps> = ({
               : ""}
           </p>
         )
-      ) : t === ReadingQuestionType.LIST_MATCHING ||
-        t === ReadingQuestionType.CLASSIFICATION ? (
+      ) : t === ReadingQuestionType.LIST_MATCHING ? (
+        q.questionText?.trim() ? (
+          <p className="text-base font-medium text-gray-900 leading-snug">
+            {q.questionText}
+          </p>
+        ) : (
+          <p className="text-sm font-semibold text-gray-700">
+            Questions {questionNumber}
+            {(q.options?.length ?? 0) > 1
+              ? ` – ${questionNumber + (q.options?.length ?? 0) - 1}`
+              : ""}
+          </p>
+        )
+      ) : t === ReadingQuestionType.CLASSIFICATION ? (
         <p className="text-sm font-semibold text-gray-700 text-center">
           Questions {questionNumber}
           {(q.options?.length ?? 0) > 1
@@ -1229,9 +1246,6 @@ const MatchingSentenceEndings: React.FC<MatchingSentenceEndingsProps> = ({
               >
                 {placed ? (
                   <div className="flex flex-col items-center gap-1 w-full">
-                    <span className="text-xs font-bold text-rose-900 tabular-nums">
-                      {i + 1}
-                    </span>
                     <span
                       draggable
                       onDragStart={(e) => startDragLetter(e, placed)}

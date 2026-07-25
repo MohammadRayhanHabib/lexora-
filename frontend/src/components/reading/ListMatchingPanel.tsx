@@ -81,6 +81,105 @@ const ListMatchingPanel: React.FC<ListMatchingPanelProps> = ({
     );
   }
 
+  if (visualVariant === "list") {
+    return (
+      <div className="space-y-7" data-question-id={questionId}>
+        <ol className="list-none space-y-4 pl-0">
+          {purposes.map((purpose, i) => {
+            const qn = firstQuestionNumber + i;
+            const placed = getArr()[i] ?? "";
+            const isOver = overSlot === i;
+
+            return (
+              <li
+                key={i}
+                className="grid grid-cols-[minmax(0,1fr)_minmax(5.5rem,7.5rem)] items-end gap-x-5 text-base text-gray-950"
+              >
+                <p className="min-w-0 leading-relaxed">
+                  <strong className="mr-1.5 font-bold">{qn}.</strong>
+                  {purpose.trim() || (
+                    <span className="italic text-gray-400">
+                      Purpose to match…
+                    </span>
+                  )}
+                </p>
+
+                <div
+                  onDragOver={(e) => {
+                    if (readOnly) return;
+                    e.preventDefault();
+                    setOverSlot(i);
+                  }}
+                  onDragLeave={() => setOverSlot(null)}
+                  onDrop={(e) => onDrop(e, i)}
+                  className={`flex min-h-8 items-end border-b border-dashed px-3 pb-1 transition-colors ${
+                    isOver
+                      ? "border-sky-600 bg-sky-50"
+                      : placed
+                        ? "border-rose-500"
+                        : "border-gray-500"
+                  }`}
+                >
+                  {readOnly ? (
+                    <span className="w-full text-center font-medium text-rose-600">
+                      {placed}
+                    </span>
+                  ) : (
+                    <input
+                      type="text"
+                      maxLength={2}
+                      value={placed}
+                      onChange={(e) => {
+                        const raw = e.target.value.trim().toUpperCase();
+                        if (!raw) {
+                          clearSlot(i);
+                          return;
+                        }
+                        const ch = raw.slice(-1);
+                        if (letters.includes(ch)) setSlot(i, ch);
+                      }}
+                      className="h-7 w-full bg-transparent text-center text-base font-medium uppercase text-rose-600 outline-none"
+                      aria-label={`Question ${qn}`}
+                      autoComplete="off"
+                    />
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+
+        {choices.length > 0 ? (
+          <div className="border-2 border-gray-700 bg-white px-4 py-3 sm:px-5 sm:py-4">
+            <div className="space-y-1">
+              {choices.map((choice) => (
+                <div
+                  key={choice.letter}
+                  draggable={!readOnly}
+                  onDragStart={
+                    readOnly
+                      ? undefined
+                      : (e) => startDrag(e, choice.letter)
+                  }
+                  className={`flex items-start gap-2.5 px-1 py-1.5 text-base leading-relaxed text-gray-950 ${
+                    readOnly
+                      ? ""
+                      : "cursor-grab rounded-sm hover:bg-gray-50 active:cursor-grabbing"
+                  }`}
+                >
+                  <strong className="w-4 shrink-0 font-bold">
+                    {choice.letter}
+                  </strong>
+                  <span>{choice.description}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
   const title =
     bankTitle.trim() ||
     (visualVariant === "classification" ? "Categories" : "List of options");
@@ -121,19 +220,21 @@ const ListMatchingPanel: React.FC<ListMatchingPanelProps> = ({
                 }}
                 onDragLeave={() => setOverSlot(null)}
                 onDrop={(e) => onDrop(e, i)}
-                className={`relative order-1 min-h-[48px] w-[4.5rem] shrink-0 rounded-md border-2 border-dashed px-1.5 pb-1 pt-5 transition-colors ${dashBorder(
+                className={`relative order-1 min-h-[48px] w-[4.5rem] shrink-0 rounded-md border-2 border-dashed px-1.5 py-2 transition-colors ${dashBorder(
                   Boolean(placed),
                   isOver,
                 )}`}
               >
-                <span
-                  className={`pointer-events-none absolute left-1/2 top-0.5 -translate-x-1/2 text-[11px] font-bold tabular-nums ${qnColor}`}
-                >
-                  {qn}
-                </span>
+                {!placed ? (
+                  <span
+                    className={`pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-bold tabular-nums ${qnColor}`}
+                  >
+                    {qn}
+                  </span>
+                ) : null}
                 {readOnly ? (
                   <div className="text-center text-sm font-semibold text-gray-800">
-                    {placed || "—"}
+                    {placed}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-0.5">
@@ -150,8 +251,8 @@ const ListMatchingPanel: React.FC<ListMatchingPanelProps> = ({
                         const ch = raw.slice(-1);
                         if (letters.includes(ch)) setSlot(i, ch);
                       }}
-                      className="w-full bg-transparent text-center text-sm font-semibold text-gray-900 placeholder:text-rose-400/60 focus:outline-none uppercase"
-                      placeholder="·"
+                      className="relative z-[1] w-full bg-transparent text-center text-sm font-semibold text-gray-900 focus:outline-none uppercase"
+                      placeholder=""
                       aria-label={`Question ${qn}`}
                       autoComplete="off"
                     />

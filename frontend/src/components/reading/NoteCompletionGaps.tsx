@@ -47,14 +47,14 @@ const NoteCompletionGaps: React.FC<NoteCompletionGapsProps> = ({
   const isSummary = appearance === "summary";
   const resolvedLineTextClassName = lineTextClassName || "text-sm";
   const gapBoxClassSuffix = isSummary
-    ? "flex shrink-0 min-h-[42px] min-w-[min(100%,210px)] max-w-[280px] items-stretch overflow-hidden rounded-sm border border-dashed border-[#C0504D] bg-[#FCE4E4] shadow-sm"
-    : "flex shrink-0 min-h-[44px] min-w-[min(100%,220px)] max-w-[300px] items-stretch overflow-hidden rounded-md border-2 border-dashed border-rose-300 bg-rose-50/60 shadow-sm";
+    ? "relative flex shrink-0 min-h-[42px] min-w-[min(100%,210px)] max-w-[280px] items-stretch overflow-hidden rounded-sm border border-dashed border-[#C0504D] bg-[#FCE4E4] shadow-sm"
+    : "relative flex shrink-0 min-h-[44px] min-w-[min(100%,220px)] max-w-[300px] items-stretch overflow-hidden rounded-md border-2 border-dashed border-rose-300 bg-rose-50/60 shadow-sm";
   const gapBoxClassInline = isSummary
-    ? "inline-flex min-h-[36px] min-w-[9rem] max-w-[13rem] items-stretch overflow-hidden align-baseline rounded-sm border border-dashed border-[#C0504D] bg-[#FCE4E4] shadow-sm"
-    : "inline-flex min-h-[40px] min-w-[10rem] max-w-[14rem] items-stretch overflow-hidden align-baseline rounded-md border-2 border-dashed border-rose-300 bg-rose-50/60 shadow-sm";
+    ? "relative inline-flex min-h-[36px] min-w-[9rem] max-w-[13rem] items-stretch overflow-hidden align-baseline rounded-sm border border-dashed border-[#C0504D] bg-[#FCE4E4] shadow-sm"
+    : "relative inline-flex min-h-[40px] min-w-[10rem] max-w-[14rem] items-stretch overflow-hidden align-baseline rounded-md border-2 border-dashed border-rose-300 bg-rose-50/60 shadow-sm";
   const qnClass = isSummary
-    ? "pointer-events-none flex min-w-9 shrink-0 items-center justify-center border-r border-[#C0504D]/40 bg-white/65 px-2 text-xs font-bold tabular-nums text-gray-900"
-    : "pointer-events-none flex min-w-10 shrink-0 items-center justify-center border-r border-rose-300 bg-white/70 px-2 text-xs font-bold tabular-nums text-rose-900";
+    ? "pointer-events-none absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums text-gray-900"
+    : "pointer-events-none absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums text-rose-900";
 
   const renderGap = (globalIdx: number, variant: "suffix" | "inline") => {
     const qn = firstQuestionNumber + globalIdx;
@@ -74,8 +74,8 @@ const NoteCompletionGaps: React.FC<NoteCompletionGapsProps> = ({
           readOnly={readOnly}
           disabled={readOnly}
           aria-label={`Gap ${qn}`}
-          className={`min-w-0 flex-1 bg-transparent px-2.5 py-2 text-center text-gray-900 placeholder:text-gray-400/70 focus:outline-none focus:ring-0 disabled:cursor-default ${resolvedLineTextClassName}`}
-          placeholder={readOnly ? "—" : "Type here"}
+          className={`relative z-[1] min-w-0 flex-1 bg-transparent px-2.5 py-2 text-center text-gray-900 focus:outline-none focus:ring-0 disabled:cursor-default ${resolvedLineTextClassName}`}
+          placeholder=""
           autoComplete="off"
         />
       </div>

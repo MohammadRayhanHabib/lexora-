@@ -129,7 +129,7 @@ const SentenceEndingMatchingPanel: React.FC<
                       setSelectedLetter(placedLetter);
                   }
                 }}
-                className={`group relative min-h-[48px] w-full max-w-[260px] rounded-sm border-2 border-dashed px-3 pb-2 pt-5 transition-colors ${
+                className={`group relative flex min-h-[48px] w-full max-w-[260px] items-center justify-center rounded-sm border-2 border-dashed px-3 py-2 transition-colors ${
                   placedLetter
                     ? "border-sky-500 bg-sky-50"
                     : isOver
@@ -137,9 +137,6 @@ const SentenceEndingMatchingPanel: React.FC<
                       : "border-gray-400 bg-white hover:border-sky-500"
                 }`}
               >
-                <span className="pointer-events-none absolute left-2 top-1 text-[11px] font-bold tabular-nums text-gray-700">
-                  {questionNumber}
-                </span>
                 {placedLetter ? (
                   <div className="flex items-start gap-2">
                     <span className="shrink-0 font-bold text-sky-800">
@@ -163,8 +160,8 @@ const SentenceEndingMatchingPanel: React.FC<
                     )}
                   </div>
                 ) : (
-                  <span className="block text-center text-xs text-gray-500">
-                    {readOnly ? "No answer" : "Drop or select an ending"}
+                  <span className="pointer-events-none text-sm font-bold tabular-nums text-gray-700">
+                    {questionNumber}
                   </span>
                 )}
               </div>

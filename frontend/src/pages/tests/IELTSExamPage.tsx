@@ -1548,44 +1548,40 @@ const IeltsFlowchartCompletionPanel: React.FC<
                 </div>
               )}
               <div className="rounded-lg border border-gray-200 bg-gradient-to-b from-gray-50/90 to-white px-3 py-3 text-sm text-gray-900 leading-relaxed flex flex-wrap items-center justify-center gap-x-1 gap-y-2 text-center min-h-[2.5rem]">
-                {parts.map((part, pi) => (
-                  <React.Fragment key={`${ri}-${pi}`}>
-                    {part ? (
-                      <span className="whitespace-pre-wrap">{part}</span>
-                    ) : null}
-                    {pi < parts.length - 1 ? (
-                      <span className="inline-flex flex-col items-center mx-1 shrink-0 align-baseline">
-                        <span className="text-[11px] font-bold text-rose-900 tabular-nums leading-none mb-0.5">
-                          (
-                          {firstQuestionNumber +
-                            ieltsFlowchartGapsBeforeRow(rows, ri) +
-                            pi}
-                          )
+                {parts.map((part, pi) => {
+                  const gapIndex =
+                    ieltsFlowchartGapsBeforeRow(rows, ri) + pi;
+                  const questionNumber = firstQuestionNumber + gapIndex;
+                  const gapValue = vals[gapIndex] ?? "";
+
+                  return (
+                    <React.Fragment key={`${ri}-${pi}`}>
+                      {part ? (
+                        <span className="whitespace-pre-wrap">{part}</span>
+                      ) : null}
+                      {pi < parts.length - 1 ? (
+                        <span className="relative mx-1 inline-flex shrink-0 items-stretch align-baseline">
+                          {!gapValue.trim() ? (
+                            <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-bold tabular-nums text-rose-900">
+                              {questionNumber}
+                            </span>
+                          ) : null}
+                          <input
+                            type="text"
+                            value={gapValue}
+                            onChange={(e) =>
+                              setVal(gapIndex, e.target.value)
+                            }
+                            aria-label={`Flowchart gap ${questionNumber}`}
+                            className="relative z-[1] min-h-10 w-[min(12rem,85vw)] min-w-[7rem] rounded-md border-2 border-dashed border-rose-300 bg-transparent px-2 py-1 text-center text-sm text-gray-900 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-200"
+                            placeholder=""
+                            autoComplete="off"
+                          />
                         </span>
-                        <input
-                          type="text"
-                          value={
-                            vals[ieltsFlowchartGapsBeforeRow(rows, ri) + pi] ?? ""
-                          }
-                          onChange={(e) =>
-                            setVal(
-                              ieltsFlowchartGapsBeforeRow(rows, ri) + pi,
-                              e.target.value,
-                            )
-                          }
-                          aria-label={`Flowchart gap ${
-                            firstQuestionNumber +
-                            ieltsFlowchartGapsBeforeRow(rows, ri) +
-                            pi
-                          }`}
-                          className="w-[min(12rem,85vw)] min-w-[7rem] rounded-md border-2 border-dashed border-rose-300 bg-rose-50/70 px-2 py-1 text-center text-sm text-gray-900 placeholder:text-rose-400/70 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-200"
-                          placeholder="······"
-                          autoComplete="off"
-                        />
-                      </span>
-                    ) : null}
-                  </React.Fragment>
-                ))}
+                      ) : null}
+                    </React.Fragment>
+                  );
+                })}
               </div>
             </React.Fragment>
           );
@@ -2435,11 +2431,18 @@ const ReadingSection: React.FC<{
                   </p>
                 ) : null
               ) : statementOrListMatchingStemUi ? (
-                currentQ.questionType ===
-                  ReadingQuestionType.MATCHING_FEATURES &&
+                (currentQ.questionType ===
+                  ReadingQuestionType.MATCHING_FEATURES ||
+                  currentQ.questionType ===
+                    ReadingQuestionType.LIST_MATCHING) &&
                 currentQ.questionText?.trim() ? (
                   <p
-                    className={`text-gray-800 leading-snug font-bold text-center ${questionFontClass}`}
+                    className={`text-gray-800 leading-snug ${
+                      currentQ.questionType ===
+                      ReadingQuestionType.MATCHING_FEATURES
+                        ? "text-center font-bold"
+                        : "font-medium"
+                    } ${questionFontClass}`}
                   >
                     {currentQ.questionText}
                   </p>
@@ -2889,18 +2892,20 @@ const ReadingSection: React.FC<{
           <button
             onClick={() => setActiveQNum(Math.max(1, activeQNum - 1))}
             disabled={activeQNum <= 1}
-            className="flex h-11 w-11 items-center justify-center rounded-sm bg-gray-800 text-white transition-colors hover:bg-black disabled:bg-gray-200 disabled:text-gray-400"
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-sm bg-gray-800 text-white transition-colors hover:bg-black disabled:bg-gray-200 disabled:text-white"
+            aria-label="Previous question"
           >
-            <FiChevronLeft className="w-5 h-5" />
+            <FiChevronLeft className="h-8 w-8 stroke-[3]" />
           </button>
           <button
             onClick={() =>
               setActiveQNum(Math.min(totalQuestions, activeQNum + 1))
             }
             disabled={activeQNum >= totalQuestions}
-            className="flex h-11 w-11 items-center justify-center rounded-sm bg-black text-white transition-colors hover:bg-gray-800 disabled:bg-gray-200 disabled:text-gray-400"
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-sm bg-black text-white transition-colors hover:bg-gray-800 disabled:bg-gray-200 disabled:text-white"
+            aria-label="Next question"
           >
-            <FiChevronRight className="w-5 h-5" />
+            <FiChevronRight className="h-8 w-8 stroke-[3]" />
           </button>
         </div>
       </div>

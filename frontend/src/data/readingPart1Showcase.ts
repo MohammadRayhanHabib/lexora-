@@ -80,8 +80,9 @@ export const READING_PART_1_SHOWCASE_QUESTIONS: IReadingQuestionStudent[] = [
   question(1, ReadingQuestionType.LIST_MATCHING, {
     groupLabel: "R-01 · List Matching",
     instructions:
-      "Match each purpose with the correct planning action, A–G.",
-    questionText: "Planning actions",
+      "Choose FIVE answers from the box and write the correct letter, A–G, next to Questions 1–5.",
+    questionText:
+      "What is the main purpose of each of the following planning actions?",
     options: [
       "Reduce pressure on drains",
       "Protect new planting from early failure",

@@ -128,7 +128,7 @@ const StatementMatchingPanel: React.FC<StatementMatchingPanelProps> = ({
                 }}
                 onDragLeave={() => setOverSlot(null)}
                 onDrop={(e) => onDropSlot(e, i)}
-                className={`relative min-h-[48px] min-w-[min(100%,5.5rem)] max-w-[5.5rem] shrink-0 rounded-md border-2 border-dashed px-2 pb-1.5 pt-5 transition-colors ${
+                className={`relative min-h-[48px] min-w-[min(100%,5.5rem)] max-w-[5.5rem] shrink-0 rounded-md border-2 border-dashed px-2 py-2 transition-colors ${
                   placed
                     ? "border-rose-400 bg-rose-50"
                     : isOver
@@ -136,12 +136,14 @@ const StatementMatchingPanel: React.FC<StatementMatchingPanelProps> = ({
                       : "border-rose-300 bg-rose-50/60"
                 }`}
               >
-                <span className="pointer-events-none absolute left-1/2 top-0.5 -translate-x-1/2 text-[11px] font-bold tabular-nums text-rose-900">
-                  {qn}
-                </span>
+                {!placed ? (
+                  <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-bold tabular-nums text-rose-900">
+                    {qn}
+                  </span>
+                ) : null}
                 {readOnly ? (
                   <div className="text-center text-sm font-semibold text-gray-800">
-                    {placed || "—"}
+                    {placed}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-0.5">
@@ -159,8 +161,8 @@ const StatementMatchingPanel: React.FC<StatementMatchingPanelProps> = ({
                         const ch = raw.slice(-1);
                         if (letters.includes(ch)) setSlot(i, ch);
                       }}
-                      className="w-full bg-transparent text-center text-sm font-semibold text-gray-900 placeholder:text-rose-400/60 focus:outline-none focus:ring-0 uppercase"
-                      placeholder="·"
+                      className="relative z-[1] w-full bg-transparent text-center text-sm font-semibold text-gray-900 focus:outline-none focus:ring-0 uppercase"
+                      placeholder=""
                       aria-label={`Question ${qn}, choose ${letters.join(", ")}`}
                       autoComplete="off"
                     />

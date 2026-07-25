@@ -138,16 +138,13 @@ const DiagramLabelCompletionPanel: React.FC<
               key={i}
               className="flex flex-wrap items-start gap-3 rounded-lg border border-gray-100 bg-white/80 p-2"
             >
-              <div className="flex w-12 shrink-0 flex-col items-end gap-0.5 pt-2 text-right sm:w-14">
-                <span className="text-lg font-bold tabular-nums leading-none text-gray-900">
-                  {qn}
-                </span>
-                {hint ? (
+              {hint ? (
+                <div className="flex w-12 shrink-0 flex-col items-end gap-0.5 pt-2 text-right sm:w-14">
                   <span className="max-w-[5.5rem] text-[10px] leading-snug text-gray-500">
                     {hint}
                   </span>
-                ) : null}
-              </div>
+                </div>
+              ) : null}
               <div
                 onDragOver={(e) => {
                   if (readOnly) return;
@@ -156,7 +153,7 @@ const DiagramLabelCompletionPanel: React.FC<
                 }}
                 onDragLeave={() => setOverSlot(null)}
                 onDrop={(e) => onDrop(e, i)}
-                className={`relative min-h-[52px] min-w-0 flex-1 rounded-md border-2 px-2 pb-1.5 pt-6 transition-colors focus-within:border-indigo-500 focus-within:border-solid focus-within:ring-2 focus-within:ring-indigo-200/80 ${
+                className={`relative min-h-[52px] min-w-0 flex-1 rounded-md border-2 px-2 py-2 transition-colors focus-within:border-indigo-500 focus-within:border-solid focus-within:ring-2 focus-within:ring-indigo-200/80 ${
                   placed
                     ? "border-rose-400 bg-rose-50"
                     : isOver
@@ -164,12 +161,14 @@ const DiagramLabelCompletionPanel: React.FC<
                       : "border-dashed border-rose-300 bg-rose-50/60"
                 }`}
               >
-                <span className="pointer-events-none absolute left-1/2 top-0.5 -translate-x-1/2 text-[11px] font-bold tabular-nums text-rose-900">
-                  {qn}
-                </span>
+                {!placed ? (
+                  <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-bold tabular-nums text-rose-900">
+                    {qn}
+                  </span>
+                ) : null}
                 {readOnly ? (
                   <div className="text-center text-sm font-semibold text-gray-800">
-                    {placed || "—"}
+                    {placed}
                   </div>
                 ) : (
                   <div className="flex flex-col items-stretch gap-0.5">
@@ -177,8 +176,8 @@ const DiagramLabelCompletionPanel: React.FC<
                       type="text"
                       value={placed}
                       onChange={(e) => setSlot(i, e.target.value)}
-                      className="w-full bg-transparent text-center text-sm font-semibold text-gray-900 placeholder:text-rose-400/60 focus:outline-none"
-                      placeholder="Answer"
+                      className="relative z-[1] w-full bg-transparent text-center text-sm font-semibold text-gray-900 focus:outline-none"
+                      placeholder=""
                       aria-label={`Question ${qn}`}
                       autoComplete="off"
                     />
