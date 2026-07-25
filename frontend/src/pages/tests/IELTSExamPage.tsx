@@ -2892,20 +2892,20 @@ const ReadingSection: React.FC<{
           <button
             onClick={() => setActiveQNum(Math.max(1, activeQNum - 1))}
             disabled={activeQNum <= 1}
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-sm bg-gray-800 text-white transition-colors hover:bg-black disabled:bg-gray-200 disabled:text-white"
+            className="box-border flex h-16 min-h-16 w-16 min-w-16 shrink-0 items-center justify-center rounded-sm border-0 bg-gray-800 p-0 text-white transition-colors hover:bg-black disabled:bg-gray-200 disabled:text-white"
             aria-label="Previous question"
           >
-            <FiChevronLeft className="h-8 w-8 stroke-[3]" />
+            <FiChevronLeft className="h-10 w-10 stroke-[3]" />
           </button>
           <button
             onClick={() =>
               setActiveQNum(Math.min(totalQuestions, activeQNum + 1))
             }
             disabled={activeQNum >= totalQuestions}
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-sm bg-black text-white transition-colors hover:bg-gray-800 disabled:bg-gray-200 disabled:text-white"
+            className="box-border flex h-16 min-h-16 w-16 min-w-16 shrink-0 items-center justify-center rounded-sm border-0 bg-black p-0 text-white transition-colors hover:bg-gray-800 disabled:bg-gray-200 disabled:text-white"
             aria-label="Next question"
           >
-            <FiChevronRight className="h-8 w-8 stroke-[3]" />
+            <FiChevronRight className="h-10 w-10 stroke-[3]" />
           </button>
         </div>
       </div>
