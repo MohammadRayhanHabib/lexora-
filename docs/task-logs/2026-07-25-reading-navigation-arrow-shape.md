@@ -26,10 +26,19 @@ Match the Reading Previous and Next arrow shapes to the supplied reference.
 - Both buttons remained 64 by 64 pixels; the arrows measured 32 by 32 pixels
   with a 3.5-pixel rounded stroke.
 - No browser console errors were reported.
+- Release commit `f0ec3f6` was pushed to `origin/main`.
+- Cloudflare Pages reported a successful production deployment at
+  `https://lexora-reading-preview.pages.dev`.
+- An initial Windows-generated ZIP used backslash asset paths and produced an
+  empty app shell. It was immediately replaced by a forward-slash archive and
+  redeployed.
+- Final live verification confirmed both full-arrow stems, the expected
+  dimensions and colours, and no console errors.
 
 ## Known limitations or follow-up work
 
-- Changes are local until separately committed, pushed, and deployed.
+- The Pages project currently uses manual production uploads for these releases;
+  automatic push-to-deploy should be reviewed before relying on it.
 - Docker configuration is explicitly outside this task.
 
 ## Final status
