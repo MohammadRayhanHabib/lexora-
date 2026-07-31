@@ -134,7 +134,7 @@ const TableCompletionPanel: React.FC<TableCompletionPanelProps> = ({
                                       setVal(gapIndex, e.target.value)
                                     }
                                     aria-label={`Question ${questionNumber}`}
-                                    className="relative z-[1] min-w-0 flex-1 bg-transparent px-2 py-1.5 text-center text-sm text-gray-900 focus:outline-none focus:ring-0"
+                                    className="ielts-numbered-answer-input relative z-[1] min-w-0 flex-1 bg-transparent px-2 py-1.5 text-center text-sm text-gray-900 focus:outline-none focus:ring-0"
                                     placeholder=""
                                     autoComplete="off"
                                   />

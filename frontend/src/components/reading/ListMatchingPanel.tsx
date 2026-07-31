@@ -15,7 +15,7 @@ export interface ListMatchingPanelProps {
   firstQuestionNumber: number;
   readOnly?: boolean;
   /** IELTS classification: slightly different dashed border tone. */
-  visualVariant?: "list" | "classification";
+  visualVariant?: "list" | "classification" | "two-letter";
 }
 
 const ListMatchingPanel: React.FC<ListMatchingPanelProps> = ({
@@ -78,6 +78,90 @@ const ListMatchingPanel: React.FC<ListMatchingPanelProps> = ({
       <p className="text-sm text-gray-500 italic">
         No purposes configured for this question.
       </p>
+    );
+  }
+
+  if (visualVariant === "two-letter") {
+    const allowedLetters = purposes.map((_, index) =>
+      String.fromCharCode(65 + index),
+    );
+    const selectedLetters = answer
+      .map((value) => String(value ?? "").trim().toUpperCase())
+      .filter(
+        (value, index, values) =>
+          allowedLetters.includes(value) && values.indexOf(value) === index,
+      )
+      .slice(0, 2);
+
+    const toggleLetter = (letter: string) => {
+      if (readOnly) return;
+      if (selectedLetters.includes(letter)) {
+        onChange(selectedLetters.filter((value) => value !== letter));
+        return;
+      }
+      if (selectedLetters.length >= 2) return;
+      onChange([...selectedLetters, letter]);
+    };
+
+    return (
+      <div
+        className="space-y-6 pt-1 text-gray-950"
+        data-question-id={questionId}
+      >
+        <p className="text-lg italic text-gray-900">
+          Choose <strong className="font-black not-italic">TWO</strong> letters,
+          A-E.
+        </p>
+
+        <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] items-center gap-4">
+          <div className="flex h-[58px] items-center justify-center rounded-[3px] border-2 border-[#4288bc] bg-white px-2 text-lg font-black tabular-nums text-gray-900">
+            {firstQuestionNumber} - {firstQuestionNumber + 1}
+          </div>
+          <h3 className="text-lg font-black leading-snug text-gray-950">
+            {bankTitle}
+          </h3>
+        </div>
+
+        <div className="space-y-3 pl-3">
+          {purposes.map((purpose, index) => {
+            const letter = allowedLetters[index];
+            const checked = selectedLetters.includes(letter);
+            const disabled = !checked && selectedLetters.length >= 2;
+
+            return (
+              <label
+                key={letter}
+                className={`flex min-h-[43px] items-center gap-3 px-4 py-2 text-lg transition-colors ${
+                  checked ? "bg-[#acd7f4]" : "bg-white"
+                } ${
+                  readOnly || disabled
+                    ? disabled
+                      ? "cursor-not-allowed"
+                      : "cursor-default"
+                    : "cursor-pointer hover:bg-sky-50"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={readOnly || disabled}
+                  onChange={() => toggleLetter(letter)}
+                  className="h-5 w-5 shrink-0 accent-[#4c86e8]"
+                  aria-label={`${letter}. ${purpose}`}
+                />
+                <span className="leading-snug">
+                  <strong className="mr-1 font-medium">{letter}.</strong>
+                  {purpose}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+
+        <p className="text-right text-xs font-medium text-gray-500">
+          {selectedLetters.length} of 2 selected
+        </p>
+      </div>
     );
   }
 
@@ -251,7 +335,7 @@ const ListMatchingPanel: React.FC<ListMatchingPanelProps> = ({
                         const ch = raw.slice(-1);
                         if (letters.includes(ch)) setSlot(i, ch);
                       }}
-                      className="relative z-[1] w-full bg-transparent text-center text-sm font-semibold text-gray-900 focus:outline-none uppercase"
+                      className="ielts-numbered-answer-input relative z-[1] w-full bg-transparent text-center text-sm font-semibold text-gray-900 focus:outline-none uppercase"
                       placeholder=""
                       aria-label={`Question ${qn}`}
                       autoComplete="off"

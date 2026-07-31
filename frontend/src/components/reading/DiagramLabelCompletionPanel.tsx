@@ -176,7 +176,7 @@ const DiagramLabelCompletionPanel: React.FC<
                       type="text"
                       value={placed}
                       onChange={(e) => setSlot(i, e.target.value)}
-                      className="relative z-[1] w-full bg-transparent text-center text-sm font-semibold text-gray-900 focus:outline-none"
+                      className="ielts-numbered-answer-input relative z-[1] w-full bg-transparent text-center text-sm font-semibold text-gray-900 focus:outline-none"
                       placeholder=""
                       aria-label={`Question ${qn}`}
                       autoComplete="off"

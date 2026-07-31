@@ -1,6 +1,9 @@
 import React, { useMemo, useState } from "react";
+import { FiBookmark } from "react-icons/fi";
 
 const SENTENCE_ENDING_MIME = "application/x-lexora-sentence-ending";
+const SENTENCE_ENDING_SOURCE_MIME =
+  "application/x-lexora-sentence-ending-source";
 
 export interface SentenceEndingMatchingPanelProps {
   questionId: string;
@@ -10,6 +13,10 @@ export interface SentenceEndingMatchingPanelProps {
   onChange: (next: string[]) => void;
   firstQuestionNumber: number;
   readOnly?: boolean;
+  visualVariant?: "default" | "reference";
+  showBookmark?: boolean;
+  bookmarked?: boolean;
+  onToggleBookmark?: () => void;
 }
 
 const SentenceEndingMatchingPanel: React.FC<
@@ -22,13 +29,19 @@ const SentenceEndingMatchingPanel: React.FC<
   onChange,
   firstQuestionNumber,
   readOnly = false,
+  visualVariant = "default",
+  showBookmark = false,
+  bookmarked = false,
+  onToggleBookmark,
 }) => {
+  const referenceVariant = visualVariant === "reference";
   const letters = useMemo(
     () => endings.map((_, index) => String.fromCharCode(65 + index)),
     [endings],
   );
   const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
   const [overSlot, setOverSlot] = useState<number | null>(null);
+  const [overBank, setOverBank] = useState(false);
 
   const normalizedAnswer = Array.from({ length: stems.length }, (_, index) =>
     String(answer[index] ?? "").trim().toUpperCase(),
@@ -64,8 +77,11 @@ const SentenceEndingMatchingPanel: React.FC<
   }
 
   return (
-    <div className="space-y-6" data-question-id={questionId}>
-      <div className="space-y-4">
+    <div
+      className={`relative ${referenceVariant ? "space-y-0 pr-10" : "space-y-6"}`}
+      data-question-id={questionId}
+    >
+      <div className={referenceVariant ? "space-y-9" : "space-y-4"}>
         {stems.map((stem, index) => {
           const questionNumber = firstQuestionNumber + index;
           const placedLetter = normalizedAnswer[index] ?? "";
@@ -77,12 +93,22 @@ const SentenceEndingMatchingPanel: React.FC<
           return (
             <div
               key={`${questionId}-stem-${index}`}
-              className="flex flex-wrap items-center gap-3"
+              className={`flex flex-wrap items-center ${
+                referenceVariant ? "gap-4" : "gap-3"
+              }`}
             >
-              <p className="min-w-[min(100%,280px)] flex-1 text-sm leading-relaxed text-gray-900">
-                <span className="mr-2 font-bold tabular-nums">
-                  {questionNumber}
-                </span>
+              <p
+                className={
+                  referenceVariant
+                    ? "text-base leading-relaxed text-gray-900"
+                    : "min-w-[min(100%,280px)] flex-1 text-sm leading-relaxed text-gray-900"
+                }
+              >
+                {!referenceVariant && (
+                  <span className="mr-2 font-bold tabular-nums">
+                    {questionNumber}
+                  </span>
+                )}
                 {stem.trim() || (
                   <span className="italic text-gray-400">
                     Incomplete sentence
@@ -92,6 +118,7 @@ const SentenceEndingMatchingPanel: React.FC<
               <div
                 role={readOnly ? undefined : "button"}
                 tabIndex={readOnly ? undefined : 0}
+                draggable={!readOnly && Boolean(placedLetter)}
                 aria-label={
                   readOnly
                     ? undefined
@@ -106,6 +133,24 @@ const SentenceEndingMatchingPanel: React.FC<
                   event.preventDefault();
                   event.dataTransfer.dropEffect = "move";
                   setOverSlot(index);
+                }}
+                onDragStart={(event) => {
+                  if (readOnly || !placedLetter) return;
+                  event.dataTransfer.setData(
+                    SENTENCE_ENDING_MIME,
+                    placedLetter,
+                  );
+                  event.dataTransfer.setData(
+                    SENTENCE_ENDING_SOURCE_MIME,
+                    String(index),
+                  );
+                  event.dataTransfer.effectAllowed = "move";
+                  setSelectedLetter(placedLetter);
+                }}
+                onDragEnd={() => {
+                  setSelectedLetter(null);
+                  setOverSlot(null);
+                  setOverBank(false);
                 }}
                 onDragLeave={() => setOverSlot(null)}
                 onDrop={(event) => {
@@ -129,23 +174,48 @@ const SentenceEndingMatchingPanel: React.FC<
                       setSelectedLetter(placedLetter);
                   }
                 }}
-                className={`group relative flex min-h-[48px] w-full max-w-[260px] items-center justify-center rounded-sm border-2 border-dashed px-3 py-2 transition-colors ${
+                className={`group relative flex items-center justify-center transition-colors ${
+                  referenceVariant
+                    ? placedLetter
+                      ? "min-h-9 w-fit max-w-full cursor-grab border border-solid border-gray-600 bg-white px-5 py-1.5 text-left active:cursor-grabbing"
+                      : "h-9 w-40 border border-dashed border-gray-600 px-3 py-1"
+                    : "min-h-[48px] w-full max-w-[260px] rounded-sm border-2 border-dashed px-3 py-2"
+                } ${
                   placedLetter
-                    ? "border-sky-500 bg-sky-50"
+                    ? referenceVariant
+                      ? "border-gray-600 bg-white"
+                      : "border-sky-500 bg-sky-50"
                     : isOver
                       ? "border-sky-600 bg-sky-100"
                       : "border-gray-400 bg-white hover:border-sky-500"
                 }`}
               >
                 {placedLetter ? (
-                  <div className="flex items-start gap-2">
-                    <span className="shrink-0 font-bold text-sky-800">
+                  <div
+                    className={`flex w-full items-start ${
+                      referenceVariant ? "gap-0" : "gap-2"
+                    }`}
+                  >
+                    <span
+                      className={`shrink-0 ${
+                        referenceVariant
+                          ? "mr-1 text-gray-900"
+                          : "font-bold text-sky-800"
+                      }`}
+                    >
                       {placedLetter}
+                      {referenceVariant ? "." : ""}
                     </span>
-                    <span className="min-w-0 flex-1 text-sm leading-snug text-gray-900">
-                      {placedEnding}
-                    </span>
-                    {!readOnly && (
+                    <span
+                      className={`min-w-0 flex-1 text-gray-900 ${
+                        referenceVariant
+                          ? "text-base"
+                          : "text-sm leading-snug"
+                      }`}
+                    >
+                     {placedEnding}
+                   </span>
+                    {!readOnly && !referenceVariant && (
                       <button
                         type="button"
                         onClick={(event) => {
@@ -170,16 +240,59 @@ const SentenceEndingMatchingPanel: React.FC<
         })}
       </div>
 
-      <div className="rounded-sm bg-gray-100 p-3">
-        <p className="mb-3 text-sm font-bold text-gray-950">
-          List of sentence endings
-        </p>
+      <div
+        onDragOver={(event) => {
+          if (readOnly) return;
+          if (
+            !Array.from(event.dataTransfer.types).includes(
+              SENTENCE_ENDING_SOURCE_MIME,
+            )
+          )
+            return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+          setOverBank(true);
+        }}
+        onDragLeave={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+            setOverBank(false);
+          }
+        }}
+        onDrop={(event) => {
+          if (readOnly) return;
+          event.preventDefault();
+          const sourceSlot = Number.parseInt(
+            event.dataTransfer.getData(SENTENCE_ENDING_SOURCE_MIME),
+            10,
+          );
+          if (
+            Number.isInteger(sourceSlot) &&
+            sourceSlot >= 0 &&
+            sourceSlot < stems.length
+          ) {
+            clearSlot(sourceSlot);
+          }
+          setSelectedLetter(null);
+          setOverBank(false);
+        }}
+        className={`${
+          referenceVariant
+            ? "min-h-[220px] pl-4 pt-16"
+            : "rounded-sm bg-gray-100 p-3"
+        } transition-colors ${overBank ? "bg-sky-50" : ""}`}
+      >
+        {!referenceVariant && (
+          <p className="mb-3 text-sm font-bold text-gray-950">
+            List of sentence endings
+          </p>
+        )}
         <div className="space-y-2">
           {endings.map((ending, index) => {
             const letter = letters[index];
             const used = usedLetters.has(letter);
             const selected = selectedLetter === letter;
             if (!ending.trim()) return null;
+            if (referenceVariant && used) return null;
 
             return (
               <button
@@ -198,21 +311,39 @@ const SentenceEndingMatchingPanel: React.FC<
                     current === letter ? null : letter,
                   )
                 }
-                className={`flex w-full items-start gap-3 rounded-sm border px-3 py-2 text-left text-sm transition-colors ${
+                className={`flex items-start border text-left transition-colors ${
+                  referenceVariant
+                    ? "w-fit max-w-full rounded-none px-5 py-1.5 text-base"
+                    : "w-full gap-3 rounded-sm px-3 py-2 text-sm"
+                } ${
                   used
                     ? "cursor-default border-gray-200 bg-gray-200 text-gray-400"
                     : selected
                       ? "border-sky-600 bg-sky-50 text-gray-950"
-                      : "cursor-grab border-gray-300 bg-white text-gray-900 hover:border-gray-500 active:cursor-grabbing"
+                      : referenceVariant
+                        ? "cursor-grab border-gray-600 bg-white text-gray-900 hover:border-gray-800 active:cursor-grabbing"
+                        : "cursor-grab border-gray-300 bg-white text-gray-900 hover:border-gray-500 active:cursor-grabbing"
                 }`}
               >
-                <span className="font-bold">{letter}</span>
+                <span className={referenceVariant ? "mr-1" : "font-bold"}>
+                  {letter}{referenceVariant ? "." : ""}
+                </span>
                 <span>{ending}</span>
               </button>
             );
           })}
         </div>
       </div>
+      {referenceVariant && showBookmark && (
+        <button
+          type="button"
+          onClick={onToggleBookmark}
+          aria-label={bookmarked ? "Remove bookmark" : "Bookmark question"}
+          className="absolute right-0 top-0 flex h-8 w-8 items-center justify-center text-gray-700 hover:text-gray-950"
+        >
+          <FiBookmark className={`h-6 w-6 ${bookmarked ? "fill-current" : ""}`} />
+        </button>
+      )}
     </div>
   );
 };

@@ -13,6 +13,12 @@ import {
   FiCheck,
   FiMenu,
   FiBookmark,
+  FiChevronLeft,
+  FiChevronRight,
+  FiEye,
+  FiSend,
+  FiType,
+  FiX,
 } from "react-icons/fi";
 import { mockExamApi, IMockExam, IMockExamAttempt } from "../../api/mockExam";
 import {
@@ -65,6 +71,13 @@ type ExamSection =
   | "speaking"
   | "done";
 
+type ExamOptionsView = "menu" | "contrast" | "text-size";
+type ExamContrastMode =
+  | "black-on-white"
+  | "white-on-black"
+  | "yellow-on-black";
+type ExamTextSize = "base" | "lg" | "xl";
+
 interface ReadingPart {
   testId: string;
   test: IReadingTest;
@@ -79,6 +92,7 @@ interface ReadingAnnotation {
   start: number;
   end: number;
   text: string;
+  kind: "highlight" | "note";
   note?: string;
 }
 
@@ -123,6 +137,15 @@ const IELTSExamPage: React.FC<IELTSExamPageProps> = ({ showcase = false }) => {
   const [readingAnnotations, setReadingAnnotations] = useState<
     ReadingAnnotation[]
   >([]);
+  const [readingAnnotationDrafts, setReadingAnnotationDrafts] = useState<
+    Record<string, string>
+  >({});
+  const [activeReadingNoteId, setActiveReadingNoteId] = useState<string | null>(
+    null,
+  );
+  const [deletingReadingNoteId, setDeletingReadingNoteId] = useState<
+    string | null
+  >(null);
   const [paused, setPaused] = useState(false);
   const readingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const readingAutoSaveRef = useRef<ReturnType<typeof setInterval> | null>(
@@ -163,8 +186,20 @@ const IELTSExamPage: React.FC<IELTSExamPageProps> = ({ showcase = false }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [notes, setNotes] = useState("");
-  const [fontSize, setFontSize] = useState<"sm" | "base" | "lg">("base");
+  const [fontSize, setFontSize] = useState<ExamTextSize>("base");
+  const [contrastMode, setContrastMode] =
+    useState<ExamContrastMode>("black-on-white");
+  const [optionsView, setOptionsView] = useState<ExamOptionsView | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!optionsView) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOptionsView(null);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [optionsView]);
 
   // ── Load exam + start attempt ──────────────────────────────
   const initExam = useCallback(async () => {
@@ -408,6 +443,10 @@ const IELTSExamPage: React.FC<IELTSExamPageProps> = ({ showcase = false }) => {
 
   const submitReadingSection = useCallback(async () => {
     if (!mockAttempt || !readingParts.length) return;
+    if (mockAttempt.status === "reading_done") {
+      await startWriting();
+      return;
+    }
     setSubmitting(true);
     clearInterval(readingTimerRef.current!);
     clearInterval(readingAutoSaveRef.current!);
@@ -466,7 +505,9 @@ const IELTSExamPage: React.FC<IELTSExamPageProps> = ({ showcase = false }) => {
       const sessions = await Promise.all(
         moduleIds.map((id) =>
           writingApi
-            .startSession(id, WritingSessionMode.EXAM)
+            .startSession(id, WritingSessionMode.EXAM, {
+              allowRetake: true,
+            })
             .then((r) => r.data.data!._id),
         ),
       );
@@ -490,8 +531,10 @@ const IELTSExamPage: React.FC<IELTSExamPageProps> = ({ showcase = false }) => {
         setWritingSecondsLeft,
         handleWritingTimeout,
       );
-    } catch {
-      toast.error("Failed to start writing section");
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message || "Failed to start writing section",
+      );
     }
   }, [exam, writingSecondsLeft]);
 
@@ -654,6 +697,41 @@ const IELTSExamPage: React.FC<IELTSExamPageProps> = ({ showcase = false }) => {
       return next;
     });
 
+  const saveReadingAnnotationNote = (annotationId: string) => {
+    const note = (readingAnnotationDrafts[annotationId] ?? "").trim();
+    setReadingAnnotations((previous) =>
+      previous.map((annotation) =>
+        annotation.id === annotationId
+          ? { ...annotation, note: note || undefined }
+          : annotation,
+      ),
+    );
+    setActiveReadingNoteId(null);
+  };
+
+  const deleteReadingAnnotation = (annotationId: string) => {
+    setReadingAnnotations((previous) =>
+      previous.filter((annotation) => annotation.id !== annotationId),
+    );
+    setReadingAnnotationDrafts((previous) => {
+      const next = { ...previous };
+      delete next[annotationId];
+      return next;
+    });
+    setActiveReadingNoteId((current) =>
+      current === annotationId ? null : current,
+    );
+    setDeletingReadingNoteId((current) =>
+      current === annotationId ? null : current,
+    );
+  };
+
+  const getReadingAnnotationPartNumber = (annotation: ReadingAnnotation) =>
+    Math.max(
+      1,
+      readingParts.findIndex((part) => part.testId === annotation.partId) + 1,
+    );
+
   // ─────────────────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────────────────
@@ -692,6 +770,23 @@ const IELTSExamPage: React.FC<IELTSExamPageProps> = ({ showcase = false }) => {
   const testLabel = exam.academicNumber
     ? `C${exam.academicNumber}${exam.testNumber ? ` Test ${exam.testNumber}` : ""} ${sectionLabel}`
     : `${exam.title} ${sectionLabel}`;
+
+  const handleSubmitAction = () => {
+    setOptionsView(null);
+    if (showcase) {
+      toast("Preview mode — answers are not submitted.");
+      return;
+    }
+    if (section === "reading") {
+      void submitReadingSection();
+    } else if (section === "writing") {
+      void submitWritingSection();
+    } else if (section === "listening") {
+      void submitListeningSection();
+    } else {
+      void completeExam();
+    }
+  };
 
   // ── Intro screen ───────────────────────────────────────────
   if (section === "intro") {
@@ -790,7 +885,9 @@ const IELTSExamPage: React.FC<IELTSExamPageProps> = ({ showcase = false }) => {
 
   return (
     <div
-      className={`fixed inset-0 flex flex-col bg-[#f0f0f0] z-50 font-${fontSize === "sm" ? "sm" : fontSize === "lg" ? "lg" : "base"}`}
+      data-ielts-contrast={contrastMode}
+      data-ielts-text-size={fontSize}
+      className="ielts-exam-shell fixed inset-0 z-50 flex flex-col bg-[#f0f0f0]"
     >
       <Helmet>
         <title>{testLabel} – IELTS Exam – Lexora</title>
@@ -858,17 +955,7 @@ const IELTSExamPage: React.FC<IELTSExamPageProps> = ({ showcase = false }) => {
             }
           />
           <HeaderBtn
-            onClick={
-              showcase
-                ? () => toast("Preview mode — answers are not submitted.")
-                : section === "reading"
-                ? submitReadingSection
-                : section === "writing"
-                  ? submitWritingSection
-                  : section === "listening"
-                    ? submitListeningSection
-                    : completeExam
-            }
+            onClick={handleSubmitAction}
             label={showcase ? "Preview Only" : "Submit"}
             icon={<FiCheck className="w-3.5 h-3.5" />}
             loading={submitting}
@@ -892,14 +979,26 @@ const IELTSExamPage: React.FC<IELTSExamPageProps> = ({ showcase = false }) => {
           />
           <button
             type="button"
-            onClick={() => setShowSettings((s) => !s)}
-            aria-label="Menu"
+            onClick={() => {
+              setShowSettings(false);
+              setDeletingReadingNoteId(null);
+              setShowNotes(false);
+              setOptionsView("menu");
+            }}
+            aria-label="Open options"
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-black bg-white text-black transition-colors hover:bg-neutral-50"
           >
             <FiMenu className="h-4 w-4" />
           </button>
           <HeaderBtn
-            onClick={() => setShowNotes((n) => !n)}
+            onClick={() => {
+              setShowSettings(false);
+              setOptionsView(null);
+              setShowNotes((current) => {
+                if (current) setDeletingReadingNoteId(null);
+                return !current;
+              });
+            }}
             label="Note"
             icon={<FiEdit3 className="w-3.5 h-3.5" />}
           />
@@ -931,13 +1030,13 @@ const IELTSExamPage: React.FC<IELTSExamPageProps> = ({ showcase = false }) => {
           <div>
             <p className="text-xs text-gray-500 mb-1">Font Size</p>
             <div className="flex gap-2">
-              {(["sm", "base", "lg"] as const).map((s) => (
+              {(["base", "lg", "xl"] as const).map((s) => (
                 <button
                   key={s}
                   onClick={() => setFontSize(s)}
                   className={`flex-1 py-1.5 rounded-lg text-xs border transition-colors ${fontSize === s ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
                 >
-                  {s === "sm" ? "A-" : s === "lg" ? "A+" : "A"}
+                  {s === "base" ? "A" : s === "lg" ? "A+" : "A++"}
                 </button>
               ))}
             </div>
@@ -951,58 +1050,185 @@ const IELTSExamPage: React.FC<IELTSExamPageProps> = ({ showcase = false }) => {
         </div>
       )}
 
+      {optionsView && (
+        <ExamOptionsOverlay
+          view={optionsView}
+          contrastMode={contrastMode}
+          textSize={fontSize}
+          submitting={submitting}
+          onViewChange={setOptionsView}
+          onClose={() => setOptionsView(null)}
+          onSubmit={handleSubmitAction}
+          onContrastChange={setContrastMode}
+          onTextSizeChange={setFontSize}
+        />
+      )}
+
       {/* Notes sidebar */}
       {showNotes && (
-        <div className="absolute right-4 top-[76px] z-40 flex max-h-[calc(100vh-96px)] w-[340px] flex-col rounded-lg border border-gray-300 bg-white p-4 shadow-xl">
-          <p className="font-semibold text-gray-800 text-sm mb-2">📝 Notes</p>
-          {section === "reading" && readingAnnotations.length > 0 && (
-            <div className="mb-3 max-h-64 space-y-2 overflow-y-auto border-b border-gray-200 pb-3">
-              {readingAnnotations.map((annotation) => (
-                <div key={annotation.id} className="rounded-md bg-amber-50 p-2.5 text-xs text-gray-800">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="line-clamp-3 font-medium leading-relaxed">
-                      “{annotation.text}”
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setReadingAnnotations((previous) =>
-                          previous.filter((item) => item.id !== annotation.id),
-                        )
-                      }
-                      aria-label="Remove highlight"
-                      className="shrink-0 text-gray-400 hover:text-red-600"
-                    >
-                      ×
-                    </button>
+        <aside
+          aria-label="Notes"
+          className={`ielts-notes-drawer absolute right-0 top-[68px] z-40 flex w-full flex-col border-l border-gray-400 bg-[#eeeeee] sm:w-[350px] ${
+            section === "reading" ? "bottom-[88px]" : "bottom-0"
+          }`}
+        >
+          <div className="flex min-h-12 shrink-0 items-center justify-between border-b border-gray-400 bg-white px-3">
+            <h2 className="text-base font-medium text-gray-950">Notes</h2>
+            <button
+              type="button"
+              onClick={() => {
+                setDeletingReadingNoteId(null);
+                setShowNotes(false);
+              }}
+              aria-label="Close notes"
+              className="flex h-10 w-10 items-center justify-center text-gray-800 hover:bg-gray-100"
+            >
+              <FiX className="h-7 w-7" strokeWidth={2} />
+            </button>
+          </div>
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3">
+            {section === "reading" && readingAnnotations.length > 0 && (
+              <div className="mb-3 max-h-[65%] space-y-2 overflow-y-auto border-b border-gray-300 pb-3">
+                {readingAnnotations.map((annotation) => (
+                  <div
+                    key={annotation.id}
+                    className={`rounded-sm border p-2.5 text-xs ${
+                      annotation.kind === "note"
+                        ? "ielts-selected-note-card border-sky-300 bg-sky-100 text-gray-900"
+                        : "ielts-highlight-note-card border-amber-300 bg-amber-50 text-gray-800"
+                    }`}
+                  >
+                    {annotation.kind === "note" && (
+                      <p className="mb-1 font-bold">
+                        Part{" "}
+                        {Math.max(
+                          1,
+                          readingParts.findIndex(
+                            (part) => part.testId === annotation.partId,
+                          ) + 1,
+                        )}
+                      </p>
+                    )}
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="line-clamp-3 font-medium leading-relaxed">
+                        “{annotation.text}”
+                      </p>
+                      {annotation.kind !== "note" && (
+                        <button
+                          type="button"
+                          onClick={() => deleteReadingAnnotation(annotation.id)}
+                          aria-label="Remove highlight"
+                          className="shrink-0 text-gray-500 hover:text-red-600"
+                        >
+                          <FiX className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                    {annotation.kind === "note" && (
+                      <>
+                        <label
+                          htmlFor={`reading-note-${annotation.id}`}
+                          className="sr-only"
+                        >
+                          Note for selected passage
+                        </label>
+                        <textarea
+                          id={`reading-note-${annotation.id}`}
+                          value={
+                            readingAnnotationDrafts[annotation.id] ??
+                            annotation.note ??
+                            ""
+                          }
+                          onChange={(event) =>
+                            setReadingAnnotationDrafts((previous) => ({
+                              ...previous,
+                              [annotation.id]: event.target.value,
+                            }))
+                          }
+                          autoFocus={activeReadingNoteId === annotation.id}
+                          placeholder="Write a note for this selection..."
+                          className="ielts-selected-note-input mt-2 min-h-24 w-full resize-y border border-sky-500 bg-white px-2 py-1.5 text-sm leading-relaxed text-gray-950 outline-none focus:ring-2 focus:ring-sky-500/30"
+                        />
+                        {deletingReadingNoteId === annotation.id ? (
+                          <div
+                            className="ielts-selected-note-delete-confirmation mt-3 border-t border-sky-400 pt-3"
+                            role="group"
+                            aria-live="polite"
+                            aria-label={`Confirm deleting note from Part ${getReadingAnnotationPartNumber(annotation)}`}
+                          >
+                            <p className="text-sm leading-relaxed">
+                              You are about to delete a note from Part{" "}
+                              {getReadingAnnotationPartNumber(annotation)}
+                            </p>
+                            <div className="mt-3 flex items-center justify-end gap-6">
+                              <button
+                                type="button"
+                                onClick={() => setDeletingReadingNoteId(null)}
+                                className="ielts-selected-note-cancel px-1 py-1 text-sm font-medium"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  deleteReadingAnnotation(annotation.id)
+                                }
+                                className="ielts-selected-note-confirm px-1 py-1 text-sm font-medium"
+                              >
+                                Confirm deleting
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-2 flex items-center justify-between">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                saveReadingAnnotationNote(annotation.id)
+                              }
+                              aria-label="Save selected-text note"
+                              className="ielts-selected-note-save rounded-sm bg-gray-800 px-3 py-1.5 text-xs font-bold text-white hover:bg-gray-950"
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setDeletingReadingNoteId(annotation.id)
+                              }
+                              aria-label="Delete selected-text note"
+                              className="ielts-selected-note-delete px-1 py-1 text-xs font-medium text-sky-900 underline underline-offset-2 hover:text-red-700"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
-                  {annotation.note && (
-                    <p className="mt-1.5 border-l-2 border-amber-400 pl-2 leading-relaxed text-gray-600">
-                      {annotation.note}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={5}
-            placeholder="Write a general note..."
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-          />
-          <button
-            onClick={() => setShowNotes(false)}
-            className="w-full mt-2 py-1.5 text-xs text-gray-500 hover:text-gray-700"
-          >
-            Close
-          </button>
-        </div>
+                ))}
+              </div>
+            )}
+            <label htmlFor="exam-general-notes" className="sr-only">
+              General notes
+            </label>
+            <textarea
+              id="exam-general-notes"
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              placeholder="Write your notes here..."
+              className="min-h-[220px] flex-1 resize-none border-0 bg-transparent p-2 text-sm leading-relaxed text-gray-900 outline-none placeholder:text-gray-500"
+            />
+          </div>
+        </aside>
       )}
 
       {/* ── SECTION BODY ───────────────────────────────────── */}
-      <div className="flex-1 overflow-hidden">
+      <div
+        className={`flex-1 overflow-hidden transition-[margin] duration-200 ${
+          showNotes ? "sm:mr-[350px]" : ""
+        }`}
+      >
         {section === "listening" && (
           <ListeningWorkspace
             test={listeningTest}
@@ -1031,9 +1257,24 @@ const IELTSExamPage: React.FC<IELTSExamPageProps> = ({ showcase = false }) => {
             flaggedQuestions={flaggedReadingQuestions}
             onToggleFlag={toggleReadingFlag}
             annotations={readingAnnotations}
-            onAddAnnotation={(annotation) =>
-              setReadingAnnotations((previous) => [...previous, annotation])
-            }
+            onAddAnnotation={(annotation) => {
+              setReadingAnnotations((previous) => [
+                ...previous,
+                annotation,
+              ]);
+              if (annotation.kind === "note") {
+                setReadingAnnotationDrafts((previous) => ({
+                  ...previous,
+                  [annotation.id]: annotation.note ?? "",
+                }));
+                setActiveReadingNoteId(annotation.id);
+              }
+            }}
+            onOpenNotes={() => {
+              setShowSettings(false);
+              setOptionsView(null);
+              setShowNotes(true);
+            }}
           />
         )}
 
@@ -1069,6 +1310,190 @@ const IELTSExamPage: React.FC<IELTSExamPageProps> = ({ showcase = false }) => {
           flaggedQuestions={flaggedReadingQuestions}
         />
       )}
+    </div>
+  );
+};
+
+const ExamOptionsOverlay: React.FC<{
+  view: ExamOptionsView;
+  contrastMode: ExamContrastMode;
+  textSize: ExamTextSize;
+  submitting: boolean;
+  onViewChange: (view: ExamOptionsView) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+  onContrastChange: (mode: ExamContrastMode) => void;
+  onTextSizeChange: (size: ExamTextSize) => void;
+}> = ({
+  view,
+  contrastMode,
+  textSize,
+  submitting,
+  onViewChange,
+  onClose,
+  onSubmit,
+  onContrastChange,
+  onTextSizeChange,
+}) => {
+  const title =
+    view === "contrast" ? "Contrast" : view === "text-size" ? "Text size" : "Options";
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="exam-options-title"
+      className="ielts-options-overlay absolute inset-0 z-[80] overflow-y-auto bg-white"
+    >
+      <div className="relative min-h-full px-5 pb-16 pt-5 sm:px-10">
+        {view !== "menu" && (
+          <button
+            type="button"
+            onClick={() => onViewChange("menu")}
+            className="absolute left-4 top-4 flex min-h-10 items-center gap-1 rounded-sm px-2 text-xl font-medium text-black hover:bg-gray-100 sm:left-7"
+          >
+            <FiChevronLeft className="h-7 w-7" strokeWidth={3} />
+            <span>Options</span>
+          </button>
+        )}
+
+        <h1
+          id="exam-options-title"
+          className="text-center text-[28px] font-medium leading-10 text-black"
+        >
+          {title}
+        </h1>
+
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close options"
+          className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-sm text-black hover:bg-gray-100 sm:right-7"
+        >
+          <FiX className="h-7 w-7" strokeWidth={3.5} />
+        </button>
+
+        <div className="mx-auto mt-7 w-full max-w-[700px]">
+          {view === "menu" && (
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={onSubmit}
+                disabled={submitting}
+                className="ielts-options-primary flex min-h-[76px] w-full items-center gap-5 rounded-[3px] border border-[#bd0f2d] bg-[#ec1235] px-9 text-left text-base font-semibold text-white shadow-sm transition-colors hover:bg-[#d80f30] disabled:opacity-60"
+              >
+                <FiSend className="h-6 w-6 shrink-0" />
+                <span>Go to submission page</span>
+                <FiChevronRight className="ml-auto h-7 w-7 shrink-0" strokeWidth={3.5} />
+              </button>
+
+              <div className="overflow-hidden rounded-[3px] border border-gray-300 bg-white">
+                <button
+                  type="button"
+                  onClick={() => onViewChange("contrast")}
+                  className="flex min-h-[76px] w-full items-center gap-5 border-b border-gray-300 px-9 text-left text-lg text-black transition-colors hover:bg-gray-100"
+                >
+                  <FiEye className="h-6 w-6 shrink-0 text-gray-400" />
+                  <span>Contrast</span>
+                  <FiChevronRight
+                    className="ml-auto h-7 w-7 shrink-0"
+                    strokeWidth={3.5}
+                  />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onViewChange("text-size")}
+                  className="flex min-h-[76px] w-full items-center gap-5 px-9 text-left text-lg text-black transition-colors hover:bg-gray-100"
+                >
+                  <FiType className="h-6 w-6 shrink-0 text-gray-400" />
+                  <span>Text size</span>
+                  <FiChevronRight
+                    className="ml-auto h-7 w-7 shrink-0"
+                    strokeWidth={3.5}
+                  />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {view === "contrast" && (
+            <div className="overflow-hidden rounded-[3px] border border-gray-300 bg-white">
+              {(
+                [
+                  ["black-on-white", "Black on white"],
+                  ["white-on-black", "White on black"],
+                  ["yellow-on-black", "Yellow on black"],
+                ] as const
+              ).map(([mode, label], index) => {
+                const selected = contrastMode === mode;
+                const sampleText =
+                  mode === "yellow-on-black" ? "#ffd400" : mode === "white-on-black" ? "#ffffff" : "#111111";
+                const sampleBackground =
+                  mode === "black-on-white" ? "#ffffff" : "#050505";
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => onContrastChange(mode)}
+                    aria-pressed={selected}
+                    className={`flex min-h-[74px] w-full items-center gap-5 px-10 text-left text-lg transition-colors hover:bg-gray-100 ${
+                      index < 2 ? "border-b border-gray-300" : ""
+                    }`}
+                  >
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center">
+                      {selected && <FiCheck className="h-5 w-5" strokeWidth={3.5} />}
+                    </span>
+                    <span>{label}</span>
+                    <span
+                      aria-hidden="true"
+                      data-contrast-preview={mode}
+                      className="ielts-contrast-preview ml-auto flex h-10 w-14 flex-col justify-center gap-1 border border-gray-300 px-2 shadow-sm"
+                      style={{ backgroundColor: sampleBackground }}
+                    >
+                      {[0, 1, 2].map((line) => (
+                        <span
+                          key={line}
+                          className="ielts-contrast-preview-line block h-0.5 w-full"
+                          style={{ backgroundColor: sampleText }}
+                        />
+                      ))}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {view === "text-size" && (
+            <div className="overflow-hidden rounded-[3px] border border-gray-300 bg-white">
+              {(
+                [
+                  ["base", "Regular"],
+                  ["lg", "Large"],
+                  ["xl", "Extra large"],
+                ] as const
+              ).map(([size, label], index) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => onTextSizeChange(size)}
+                  aria-pressed={textSize === size}
+                  className={`flex min-h-[74px] w-full items-center gap-5 px-10 text-left transition-colors hover:bg-gray-100 ${
+                    index < 2 ? "border-b border-gray-300" : ""
+                  } ${size === "base" ? "text-base" : size === "lg" ? "text-lg" : "text-xl"}`}
+                >
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center">
+                    {textSize === size && (
+                      <FiCheck className="h-5 w-5" strokeWidth={3.5} />
+                    )}
+                  </span>
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
@@ -1162,19 +1587,54 @@ const ReadingHeadingBank: React.FC<{
   answer: string[];
   selectedLetter: string | null;
   onSelect: (letter: string) => void;
-}> = ({ headings, answer, selectedLetter, onSelect }) => {
+  onReturn?: (letter: string) => void;
+  visualVariant?: "interactive" | "reference";
+}> = ({
+  headings,
+  answer,
+  selectedLetter,
+  onSelect,
+  onReturn,
+  visualVariant = "interactive",
+}) => {
   const usedLetters = new Set(answer.filter(Boolean));
   const [draggingLetter, setDraggingLetter] = useState<string | null>(null);
+  const referenceVariant = visualVariant === "reference";
 
   return (
-    <div className="space-y-2">
-      <p className="text-sm font-bold text-gray-950">List of Headings</p>
-      <p className="text-xs leading-relaxed text-gray-500">
-        Drag a heading to a passage slot, or select it and then choose a slot.
+    <div
+      className={referenceVariant ? "space-y-5" : "space-y-2"}
+      onDragOver={(event) => {
+        if (!onReturn) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+      }}
+      onDrop={(event) => {
+        if (!onReturn) return;
+        event.preventDefault();
+        const letter = event.dataTransfer.getData(HEADING_DRAG_MIME);
+        if (letter) onReturn(letter);
+      }}
+    >
+      <p
+        className={
+          referenceVariant
+            ? "text-lg font-bold text-gray-950"
+            : "text-sm font-bold text-gray-950"
+        }
+      >
+        List of Headings
       </p>
+      {!referenceVariant && (
+        <p className="text-xs leading-relaxed text-gray-500">
+          Drag a heading to a passage slot, or select it and then choose a slot.
+        </p>
+      )}
       <div
-        className={`space-y-2 pt-1 transition-colors ${
-          draggingLetter ? "rounded-sm bg-gray-200 p-1.5" : ""
+        className={`${referenceVariant ? "space-y-3 pl-4" : "space-y-2 pt-1"} transition-colors ${
+          !referenceVariant && draggingLetter
+            ? "rounded-sm bg-gray-200 p-1.5"
+            : ""
         }`}
       >
         {headings.map((heading, index) => {
@@ -1195,15 +1655,26 @@ const ReadingHeadingBank: React.FC<{
               }}
               onDragEnd={() => setDraggingLetter(null)}
               onClick={() => onSelect(letter)}
-              className={`flex w-fit max-w-full items-start rounded-sm border px-2 py-1 text-left text-sm font-semibold leading-snug transition-all ${
-                draggingLetter === letter ? "opacity-0" : ""
+              className={`flex w-fit max-w-full items-start border text-left leading-snug transition-all ${
+                referenceVariant
+                  ? "min-h-8 rounded-none border-gray-500 px-5 py-1.5 text-base font-normal"
+                  : "rounded-sm px-2 py-1 text-sm font-semibold"
+              } ${
+                !referenceVariant && draggingLetter === letter
+                  ? "opacity-0"
+                  : ""
               } ${
                 selected
                   ? "border-sky-600 bg-sky-50 text-gray-950 shadow-sm"
                   : "cursor-grab border-gray-300 bg-white text-gray-900 hover:border-gray-500 hover:shadow-sm active:cursor-grabbing"
               }`}
             >
-              <span>{heading}</span>
+              <span>
+                {referenceVariant && (
+                  <span className="mr-1.5">{letter}.</span>
+                )}
+                {heading}
+              </span>
             </button>
           );
         })}
@@ -1221,6 +1692,7 @@ const ReadingHeadingDropZone: React.FC<{
   onChange: (next: string[]) => void;
   onSelectionConsumed: () => void;
   firstQuestionNumber: number;
+  allowDragBack?: boolean;
 }> = ({
   slotIndex,
   slotCount,
@@ -1230,6 +1702,7 @@ const ReadingHeadingDropZone: React.FC<{
   onChange,
   onSelectionConsumed,
   firstQuestionNumber,
+  allowDragBack = false,
 }) => {
   const normalized = Array.from({ length: slotCount }, (_, index) =>
     String(answer[index] ?? ""),
@@ -1257,6 +1730,12 @@ const ReadingHeadingDropZone: React.FC<{
   return (
     <div className="not-prose mb-1.5 select-none">
       <div
+        draggable={allowDragBack && Boolean(placed)}
+        onDragStart={(event) => {
+          if (!allowDragBack || !placed) return;
+          event.dataTransfer.setData(HEADING_DRAG_MIME, placed);
+          event.dataTransfer.effectAllowed = "move";
+        }}
         onDragOver={(event) => {
           event.preventDefault();
           event.dataTransfer.dropEffect = "copy";
@@ -1266,31 +1745,21 @@ const ReadingHeadingDropZone: React.FC<{
           placeHeading(slotIndex, event.dataTransfer.getData(HEADING_DRAG_MIME));
         }}
         onClick={() => selectedLetter && placeHeading(slotIndex, selectedLetter)}
-        className={`group flex min-h-7 cursor-pointer items-center gap-2 rounded-sm border px-2 py-0.5 text-sm transition-colors ${
+        className={`flex min-h-7 items-center gap-2 rounded-sm border transition-colors ${
           placed
-            ? "w-fit max-w-full border-sky-500 bg-white font-semibold text-gray-950"
-            : "w-full justify-center border-dashed border-sky-300 bg-white font-bold text-gray-900 hover:border-sky-500 hover:bg-sky-50"
+            ? allowDragBack
+              ? "w-fit min-w-80 max-w-full cursor-grab border-[#5b8def] bg-[#5b8def] px-5 py-1.5 text-base font-medium text-white active:cursor-grabbing"
+              : "w-fit max-w-full cursor-pointer border-sky-500 bg-white px-2 py-0.5 text-sm font-semibold text-gray-950"
+            : "w-full justify-center border-dashed border-sky-300 bg-white px-2 py-0.5 text-sm font-bold text-gray-900 hover:border-sky-500 hover:bg-sky-50"
         }`}
       >
         {placed ? (
-          <span className="flex-1">{headingForLetter(placed)}</span>
+          <span className="flex-1">
+            {allowDragBack ? `${placed}. ` : ""}
+            {headingForLetter(placed)}
+          </span>
         ) : (
           <span>{firstQuestionNumber + slotIndex}</span>
-        )}
-        {placed && (
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              const next = [...normalized];
-              next[slotIndex] = "";
-              onChange(next);
-            }}
-            aria-label={`Clear heading ${headingForLetter(placed)}`}
-            className="text-gray-400 opacity-0 transition-opacity hover:text-red-600 group-hover:opacity-100 group-focus-within:opacity-100"
-          >
-            ×
-          </button>
         )}
       </div>
     </div>
@@ -1436,7 +1905,9 @@ const CompactReadingQuestion: React.FC<{
           onClick={onToggleFlag}
           aria-label={`${flagged ? "Remove flag from" : "Flag"} question ${questionNumber}`}
           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${
-            flagged ? "bg-amber-50 text-amber-700" : "text-gray-600 hover:bg-gray-100"
+            flagged
+              ? "ielts-review-flag border-2 border-[#ff4d4f] bg-white text-[#ff4d4f]"
+              : "text-gray-600 hover:bg-gray-100"
           }`}
         >
           <FiBookmark className={`h-4 w-4 ${flagged ? "fill-current" : ""}`} />
@@ -1573,7 +2044,7 @@ const IeltsFlowchartCompletionPanel: React.FC<
                               setVal(gapIndex, e.target.value)
                             }
                             aria-label={`Flowchart gap ${questionNumber}`}
-                            className="relative z-[1] min-h-10 w-[min(12rem,85vw)] min-w-[7rem] rounded-md border-2 border-dashed border-rose-300 bg-transparent px-2 py-1 text-center text-sm text-gray-900 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-200"
+                            className="ielts-numbered-answer-input relative z-[1] min-h-10 w-[min(12rem,85vw)] min-w-[7rem] rounded-md border-2 border-dashed border-rose-300 bg-transparent px-2 py-1 text-center text-sm text-gray-900 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-200"
                             placeholder=""
                             autoComplete="off"
                           />
@@ -1617,11 +2088,12 @@ const ReadingSection: React.FC<{
   totalQuestions: number;
   getActivePart: () => ReadingPart;
   getActiveQuestion: () => IReadingQuestionStudent | null;
-  fontSize: "sm" | "base" | "lg";
+  fontSize: ExamTextSize;
   flaggedQuestions: Set<number>;
   onToggleFlag: (questionNumber: number) => void;
   annotations: ReadingAnnotation[];
   onAddAnnotation: (annotation: ReadingAnnotation) => void;
+  onOpenNotes: () => void;
 }> = ({
   parts,
   activeQNum,
@@ -1636,12 +2108,25 @@ const ReadingSection: React.FC<{
   onToggleFlag,
   annotations,
   onAddAnnotation,
+  onOpenNotes,
 }) => {
   const activePart = getActivePart();
   const currentQ = getActiveQuestion();
   const isClientShowcase =
     activePart.test.createdBy === "client-preview" &&
     activePart.test._id === READING_PART_1_SHOWCASE_TEST._id;
+  const clientPreviewListSelectUi =
+    isClientShowcase &&
+    currentQ?.questionType === ReadingQuestionType.LIST_MATCHING;
+  const clientPreviewHeadingMatchingUi =
+    isClientShowcase &&
+    currentQ?.questionType === ReadingQuestionType.MATCHING_HEADINGS;
+  const clientPreviewInformationMatchingUi =
+    isClientShowcase &&
+    currentQ?.questionType === ReadingQuestionType.MATCHING_INFORMATION;
+  const clientPreviewSentenceEndingUi =
+    isClientShowcase &&
+    currentQ?.questionType === ReadingQuestionType.MATCHING_SENTENCE_ENDINGS;
   const splitContainerRef = useRef<HTMLDivElement | null>(null);
   const passageContentRef = useRef<HTMLDivElement | null>(null);
   const selectionToolbarRef = useRef<HTMLDivElement | null>(null);
@@ -1652,8 +2137,6 @@ const ReadingSection: React.FC<{
   >(null);
   const [pendingSelection, setPendingSelection] =
     useState<PendingReadingSelection | null>(null);
-  const [selectionNoteMode, setSelectionNoteMode] = useState(false);
-  const [selectionNoteDraft, setSelectionNoteDraft] = useState("");
 
   // Question group (group all questions with same groupLabel)
   const groupStart = isClientShowcase
@@ -1672,7 +2155,8 @@ const ReadingSection: React.FC<{
       (groupStart - activePart.offset - 1)
     : activeQNum;
   const displayGroupEnd = isClientShowcase
-    ? groupStart + READING_SHOWCASE_EXAMPLES_PER_TYPE - 1
+    ? groupStart +
+      (clientPreviewListSelectUi ? 1 : READING_SHOWCASE_EXAMPLES_PER_TYPE - 1)
     : currentQ?.questionType === ReadingQuestionType.MATCHING_HEADINGS ||
         currentQ?.questionType ===
           ReadingQuestionType.MATCHING_SENTENCE_ENDINGS
@@ -1786,16 +2270,20 @@ const ReadingSection: React.FC<{
     currentQ ? ts.includes(currentQ.questionType) : false;
 
   const fontClass =
-    fontSize === "sm" ? "text-sm" : fontSize === "lg" ? "text-lg" : "text-base";
+    fontSize === "xl" ? "text-xl" : fontSize === "lg" ? "text-lg" : "text-base";
   const questionFontClass = isClientShowcase
-    ? fontSize === "sm"
-      ? "text-base"
+    ? fontSize === "xl"
+      ? "text-2xl"
       : fontSize === "lg"
         ? "text-xl"
         : "text-lg"
     : fontClass;
   const questionInstructionFontClass = isClientShowcase
-    ? "text-base"
+    ? fontSize === "xl"
+      ? "text-xl"
+      : fontSize === "lg"
+        ? "text-lg"
+        : "text-base"
     : "text-sm";
 
   const activeLocalIndex = currentQ
@@ -1875,7 +2363,11 @@ const ReadingSection: React.FC<{
         range.setEnd(node, segment.end);
         const mark = document.createElement("mark");
         mark.dataset.annotationId = segment.annotation.id;
-        mark.className = "rounded-[2px] bg-[#ffe58f] px-0.5 text-inherit";
+        mark.className = `${
+          segment.annotation.kind === "note"
+            ? "ielts-passage-note"
+            : "ielts-passage-highlight"
+        } rounded-[2px] px-0.5 text-gray-950`;
         if (segment.annotation.note) mark.title = segment.annotation.note;
         try {
           range.surroundContents(mark);
@@ -1895,8 +2387,6 @@ const ReadingSection: React.FC<{
   const clearPassageSelection = () => {
     window.getSelection()?.removeAllRanges();
     setPendingSelection(null);
-    setSelectionNoteMode(false);
-    setSelectionNoteDraft("");
   };
 
   const capturePassageSelection = () => {
@@ -1952,8 +2442,6 @@ const ReadingSection: React.FC<{
     start += leadingWhitespace;
     const rect = range.getBoundingClientRect();
 
-    setSelectionNoteMode(false);
-    setSelectionNoteDraft("");
     const toolbarHeight = 64;
     const toolbarWidth = 126;
     const toolbarGap = 9;
@@ -1983,7 +2471,9 @@ const ReadingSection: React.FC<{
     });
   };
 
-  const savePassageSelection = (note?: string) => {
+  const savePassageSelection = (
+    kind: ReadingAnnotation["kind"] = "highlight",
+  ) => {
     if (!pendingSelection) return;
     onAddAnnotation({
       id: `${pendingSelection.partId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -1991,7 +2481,7 @@ const ReadingSection: React.FC<{
       start: pendingSelection.start,
       end: pendingSelection.end,
       text: pendingSelection.text,
-      note: note?.trim() || undefined,
+      kind,
     });
     clearPassageSelection();
   };
@@ -2002,8 +2492,6 @@ const ReadingSection: React.FC<{
     const dismissSelectionTools = () => {
       window.getSelection()?.removeAllRanges();
       setPendingSelection(null);
-      setSelectionNoteMode(false);
-      setSelectionNoteDraft("");
     };
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node;
@@ -2077,23 +2565,15 @@ const ReadingSection: React.FC<{
           data-testid="reading-selection-toolbar"
           style={{
             top: pendingSelection.top,
-            left: selectionNoteMode
-              ? Math.max(
-                  8,
-                  Math.min(pendingSelection.left, window.innerWidth - 294),
-                )
-              : pendingSelection.left,
+            left: pendingSelection.left,
           }}
           onMouseDown={(event) => event.preventDefault()}
-          className={`fixed z-[80] border border-gray-500 bg-white p-1 shadow-[0_3px_12px_rgba(0,0,0,0.28)] ${
-            selectionNoteMode
-              ? "w-[286px] max-w-[calc(100vw-16px)]"
-              : "w-[126px]"
-          }`}
+          data-selection-placement={pendingSelection.placement}
+          className="ielts-selection-toolbar fixed z-[80] w-[126px] border border-gray-500 bg-white p-1 text-gray-700 shadow-[0_3px_12px_rgba(0,0,0,0.28)]"
         >
           <span
             aria-hidden="true"
-            className={`pointer-events-none absolute left-1/2 h-0 w-0 -translate-x-1/2 border-x-[7px] border-x-transparent ${
+            className={`ielts-selection-arrow-outer pointer-events-none absolute left-1/2 h-0 w-0 -translate-x-1/2 border-x-[7px] border-x-transparent ${
               pendingSelection.placement === "below"
                 ? "bottom-full border-b-[7px] border-b-gray-500"
                 : "top-full border-t-[7px] border-t-gray-500"
@@ -2101,43 +2581,23 @@ const ReadingSection: React.FC<{
           />
           <span
             aria-hidden="true"
-            className={`pointer-events-none absolute left-1/2 h-0 w-0 -translate-x-1/2 border-x-[6px] border-x-transparent ${
+            className={`ielts-selection-arrow-inner pointer-events-none absolute left-1/2 h-0 w-0 -translate-x-1/2 border-x-[6px] border-x-transparent ${
               pendingSelection.placement === "below"
                 ? "bottom-full border-b-[6px] border-b-white"
                 : "top-full border-t-[6px] border-t-white"
             }`}
           />
-          {selectionNoteMode ? (
-            <div className="flex items-center gap-1.5 p-1">
-              <input
-                type="text"
-                value={selectionNoteDraft}
-                onChange={(event) => setSelectionNoteDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") savePassageSelection(selectionNoteDraft);
-                  if (event.key === "Escape") clearPassageSelection();
+          <div className="grid grid-cols-2 divide-x divide-gray-200">
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenNotes();
+                  savePassageSelection("note");
                 }}
-                autoFocus
-                placeholder="Add a note..."
-                className="min-w-0 flex-1 border border-gray-400 px-2 py-1.5 text-xs outline-none focus:border-sky-600"
-              />
-              <button
-                type="button"
-                onClick={() => savePassageSelection(selectionNoteDraft)}
-                className="rounded-sm bg-gray-900 px-2 py-1.5 text-xs font-bold text-white hover:bg-black"
-              >
-                Save
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 divide-x divide-gray-200">
-              <button
-                type="button"
-                onClick={() => setSelectionNoteMode(true)}
                 aria-label="Add a note to selected text"
-                className="flex h-[50px] flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-gray-700 hover:bg-gray-100"
+                className="ielts-selection-toolbar-button flex h-[50px] flex-col items-center justify-center gap-0.5 bg-white text-[11px] font-medium text-gray-700 hover:bg-gray-100"
               >
-                <span className="flex h-4 w-4 items-center justify-center rounded-[1px] bg-gray-600 text-[13px] font-bold leading-none text-white">
+                <span className="ielts-selection-note-icon flex h-4 w-4 items-center justify-center rounded-[1px] bg-gray-600 text-[13px] font-bold leading-none text-white">
                   “
                 </span>
                 Note
@@ -2146,16 +2606,15 @@ const ReadingSection: React.FC<{
                 type="button"
                 onClick={() => savePassageSelection()}
                 aria-label="Highlight selected text"
-                className="flex h-[50px] flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-gray-700 hover:bg-amber-50"
+                className="ielts-selection-toolbar-button flex h-[50px] flex-col items-center justify-center gap-0.5 bg-white text-[11px] font-medium text-gray-700 hover:bg-amber-50"
               >
                 <span className="relative h-4 w-4" aria-hidden="true">
-                  <span className="absolute bottom-0 left-0 h-1 w-4 bg-[#f0cc35]" />
-                  <span className="absolute bottom-1 left-[7px] h-3 w-[3px] -rotate-12 bg-gray-600" />
+                  <span className="ielts-selection-highlight-bar absolute bottom-0 left-0 h-1 w-4 bg-[#f0cc35]" />
+                  <span className="ielts-selection-highlight-pen absolute bottom-1 left-[7px] h-3 w-[3px] -rotate-12 bg-gray-600" />
                 </span>
                 Highlight
               </button>
-            </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -2190,7 +2649,13 @@ const ReadingSection: React.FC<{
         >
           <div className="mx-auto max-w-[780px]">
             <h2
-              className={`mb-5 font-bold text-gray-950 ${fontSize === "lg" ? "text-2xl" : "text-xl"}`}
+              className={`mb-5 font-bold text-gray-950 ${
+                fontSize === "xl"
+                  ? "text-3xl"
+                  : fontSize === "lg"
+                    ? "text-2xl"
+                    : "text-xl"
+              }`}
             >
               {activePart.test.passageTitle}
             </h2>
@@ -2204,6 +2669,13 @@ const ReadingSection: React.FC<{
             <div
               ref={passageContentRef}
               onMouseUp={capturePassageSelection}
+              onContextMenu={(event) => {
+                const selection = window.getSelection();
+                if (selection && !selection.isCollapsed) {
+                  event.preventDefault();
+                  capturePassageSelection();
+                }
+              }}
               className={`prose prose-gray max-w-none leading-[1.72] text-gray-900 prose-p:mb-5 ${fontClass}`}
             >
               {passageSegments.map((segment, segmentIndex) => (
@@ -2226,10 +2698,13 @@ const ReadingSection: React.FC<{
                           setSelectedHeadingLetter(null)
                         }
                         firstQuestionNumber={
-                          isClientShowcase
-                            ? (matchingHeadingQuestion.pageNumber ?? groupStart)
+                          clientPreviewHeadingMatchingUi
+                            ? 14
+                            : isClientShowcase
+                              ? (matchingHeadingQuestion.pageNumber ?? groupStart)
                             : activePart.offset + matchingHeadingLocalIndex + 1
                         }
+                        allowDragBack={clientPreviewHeadingMatchingUi}
                       />
                     )}
                   <div
@@ -2250,7 +2725,7 @@ const ReadingSection: React.FC<{
 
       {/* Middle draggable divider */}
       <div
-        className={`group relative shrink-0 ${
+        className={`ielts-reading-divider-gutter group relative shrink-0 ${
           isClientShowcase ? "w-2 bg-gray-200" : "w-4 bg-gray-100"
         }`}
       >
@@ -2275,16 +2750,17 @@ const ReadingSection: React.FC<{
               setLeftWidthPct((w) => Math.min(75, w + 2));
             }
           }}
-          className={`absolute inset-y-0 left-1/2 z-20 flex -translate-x-1/2 cursor-col-resize items-center justify-center font-bold text-gray-950 transition-colors focus:outline-none focus:ring-2 focus:ring-[#b30d2f]/25 ${
+          className={`ielts-reading-divider-track absolute inset-y-0 left-1/2 z-20 flex -translate-x-1/2 cursor-col-resize items-center justify-center font-bold text-gray-950 transition-colors focus:outline-none focus:ring-2 focus:ring-[#b30d2f]/25 ${
             isClientShowcase
               ? "w-1 bg-gray-300 text-sm hover:bg-gray-500"
               : "w-1.5 bg-gray-400 text-[10px] hover:bg-gray-500"
           }`}
         >
           <span
-            className={`absolute flex items-center justify-center bg-white ${
+            aria-hidden="true"
+            className={`ielts-reading-divider-handle absolute flex items-center justify-center bg-white font-mono font-bold leading-none text-gray-950 ${
               isClientShowcase
-                ? "h-8 w-8 border border-gray-950 text-sm shadow-none"
+                ? "h-10 w-10 border-2 border-gray-950 text-xl shadow-none"
                 : "h-9 w-9 border border-gray-500 shadow-sm"
             }`}
           >
@@ -2296,14 +2772,16 @@ const ReadingSection: React.FC<{
       {/* ── RIGHT: QUESTIONS ────────────────────────────── */}
       <div
         style={{ width: `${100 - leftWidthPct}%` }}
-        className="flex flex-col bg-white min-w-0"
+        className="relative flex min-w-0 flex-col bg-white"
       >
         <div
-          className={`relative flex-1 overflow-y-auto px-6 pb-8 pt-7 lg:px-8 ${
+          className={`relative flex-1 overflow-y-auto px-6 pb-24 pt-7 lg:px-8 ${
             isClientShowcase ? "ielts-reading-scrollbar" : ""
           }`}
         >
-          {currentQ && (
+          {currentQ &&
+            !clientPreviewInformationMatchingUi &&
+            !clientPreviewSentenceEndingUi && (
             <button
               type="button"
               onClick={() => onToggleFlag(activeQNum)}
@@ -2313,9 +2791,9 @@ const ReadingSection: React.FC<{
                   : `Flag question ${activeQNum} for review`
               }
               title={flaggedQuestions.has(activeQNum) ? "Remove review flag" : "Flag for review"}
-              className={`absolute right-6 top-5 z-10 flex h-9 w-9 items-center justify-center rounded-md border transition-colors lg:right-8 ${
+              className={`absolute right-6 top-5 z-10 flex h-9 w-9 items-center justify-center rounded-sm border transition-colors lg:right-8 ${
                 flaggedQuestions.has(activeQNum)
-                  ? "border-amber-400 bg-amber-50 text-amber-700"
+                  ? "ielts-review-flag border-2 border-[#ff4d4f] bg-white text-[#ff4d4f]"
                   : "border-transparent bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
               }`}
             >
@@ -2325,7 +2803,13 @@ const ReadingSection: React.FC<{
             </button>
           )}
           {currentQ ? (
-            <div className="mx-auto max-w-[760px] space-y-5 pr-10">
+            <div
+              className={`mx-auto space-y-5 ${
+                clientPreviewInformationMatchingUi || clientPreviewSentenceEndingUi
+                  ? "max-w-none pr-0"
+                  : "max-w-[760px] pr-10"
+              }`}
+            >
               {isClientShowcase && currentQ.groupLabel && (
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-sky-200 bg-sky-50 px-4 py-3">
                   <div>
@@ -2339,19 +2823,74 @@ const ReadingSection: React.FC<{
                     </p>
                   </div>
                   <span className="rounded-full border border-sky-200 bg-white px-3 py-1 text-xs font-semibold text-sky-800">
-                    {READING_SHOWCASE_EXAMPLES_PER_TYPE} examples
+                    {clientPreviewListSelectUi
+                      ? "2 answers"
+                      : clientPreviewHeadingMatchingUi
+                        ? "6 examples"
+                        : `${READING_SHOWCASE_EXAMPLES_PER_TYPE} examples`}
                   </span>
                 </div>
               )}
 
               {/* Question range */}
               <p className={`font-bold text-gray-900 ${questionFontClass}`}>
-                Questions {groupStart}
-                {displayGroupEnd > groupStart ? ` – ${displayGroupEnd}` : ""}
+                {clientPreviewHeadingMatchingUi ? (
+                  <>Questions 14 - 19</>
+                ) : clientPreviewInformationMatchingUi ? (
+                  <>Questions 14 - 18</>
+                ) : clientPreviewSentenceEndingUi ? (
+                  <>Questions 7 - 9</>
+                ) : (
+                  <>
+                    Questions {groupStart}
+                    {displayGroupEnd > groupStart
+                      ? ` – ${displayGroupEnd}`
+                      : ""}
+                  </>
+                )}
               </p>
 
               {/* Group instruction */}
-              {currentQ.instructions && (
+              {clientPreviewHeadingMatchingUi ? (
+                <div className={`space-y-4 text-gray-900 ${questionInstructionFontClass}`}>
+                  <p className="leading-relaxed">
+                    The text on the following pages has six paragraphs, <strong>A-F</strong>.
+                  </p>
+                  <p className="italic leading-relaxed">
+                    Choose the correct heading for each paragraph from the list
+                    of headings (A–I) below.
+                  </p>
+                  <p className="italic leading-relaxed">
+                    Write the correct number, <strong>A-I</strong>, in boxes 14-19 on your
+                    answer sheet.
+                  </p>
+                </div>
+              ) : clientPreviewInformationMatchingUi ? (
+                <div className={`space-y-4 text-gray-900 ${questionInstructionFontClass}`}>
+                  <p className="italic leading-relaxed">
+                    The text has eight paragraphs, <strong>A-H</strong>.
+                  </p>
+                  <p className="italic leading-relaxed">
+                    Which paragraph contains the following information?
+                  </p>
+                  <p className="italic leading-relaxed">
+                    Write the correct letter, <strong>A-H</strong>, in boxes 14-18 on
+                    your answer sheet.
+                  </p>
+                  <p className="italic leading-relaxed">
+                    <strong>N.B.</strong> You may use any letter more than once.
+                  </p>
+                </div>
+              ) : clientPreviewSentenceEndingUi ? (
+                <div className={`space-y-1 text-gray-900 ${questionInstructionFontClass}`}>
+                  <p className="leading-relaxed">
+                    Complete each sentence with the correct ending, A-F, below.
+                  </p>
+                  <p className="leading-relaxed">
+                    Choose the correct ending and move it into the gap.
+                  </p>
+                </div>
+              ) : currentQ.instructions ? (
                 <div className="space-y-2">
                   <p
                     className={`${questionInstructionFontClass} text-gray-800 leading-relaxed font-medium`}
@@ -2367,7 +2906,7 @@ const ReadingSection: React.FC<{
                       "Choose YES if the statement agrees with the views of the writer, NO if the statement contradicts the views of the writer, or NOT GIVEN if it is impossible to say what the writer thinks about this."}
                   </p>
                 </div>
-              )}
+              ) : null}
 
               {matchingHeadingQuestion &&
                 (matchingHeadingQuestion.wordBank?.length ?? 0) > 0 && (
@@ -2376,11 +2915,45 @@ const ReadingSection: React.FC<{
                     answer={matchingHeadingAnswer}
                     selectedLetter={selectedHeadingLetter}
                     onSelect={setSelectedHeadingLetter}
+                    onReturn={
+                      clientPreviewHeadingMatchingUi
+                        ? (letter) => {
+                            setAnswer(
+                              matchingHeadingQuestion._id,
+                              matchingHeadingAnswer.map((value) =>
+                                value === letter ? "" : value,
+                              ),
+                            );
+                            setSelectedHeadingLetter(null);
+                          }
+                        : undefined
+                    }
+                    visualVariant={
+                      clientPreviewHeadingMatchingUi
+                        ? "reference"
+                        : "interactive"
+                    }
                   />
                 )}
 
+              {clientPreviewHeadingMatchingUi && (
+                <div className={`space-y-5 pt-8 text-gray-900 ${questionInstructionFontClass}`}>
+                  <p className="font-bold">Questions 20 - 23</p>
+                  <p className="italic leading-relaxed">
+                    Look at the following statements (Questions 20-23) and the
+                    list of people below.
+                  </p>
+                  <p className="italic leading-relaxed">
+                    Match each statement with the correct person, <strong>A</strong>,{" "}
+                    <strong>B</strong> or <strong>C</strong>.
+                  </p>
+                </div>
+              )}
+
               {/* Question text / flowchart stem (title shown in chart when set) */}
-              {flowchartGapUi ? (
+              {clientPreviewHeadingMatchingUi ||
+              clientPreviewInformationMatchingUi ||
+              clientPreviewSentenceEndingUi ? null : flowchartGapUi ? (
                 !currentQ.questionText?.trim() ? (
                   <p
                     className={`text-gray-800 leading-snug font-medium ${questionFontClass}`}
@@ -2431,6 +3004,7 @@ const ReadingSection: React.FC<{
                   </p>
                 ) : null
               ) : statementOrListMatchingStemUi ? (
+                clientPreviewListSelectUi ? null : (
                 (currentQ.questionType ===
                   ReadingQuestionType.MATCHING_FEATURES ||
                   currentQ.questionType ===
@@ -2455,6 +3029,7 @@ const ReadingSection: React.FC<{
                       ? ` – ${displayGroupEnd}`
                       : ""}
                   </p>
+                )
                 )
               ) : (
                 <p
@@ -2596,8 +3171,24 @@ const ReadingSection: React.FC<{
                       : []
                   }
                   onChange={(next) => setAnswer(currentQ._id, next)}
-                  firstQuestionNumber={groupStart}
+                  firstQuestionNumber={
+                    clientPreviewInformationMatchingUi ? 14 : groupStart
+                  }
+                  visualVariant={
+                    clientPreviewInformationMatchingUi
+                      ? "reference"
+                      : "default"
+                  }
+                  showBookmark={clientPreviewInformationMatchingUi}
+                  bookmarked={flaggedQuestions.has(activeQNum)}
+                  onToggleBookmark={() => onToggleFlag(activeQNum)}
                 />
+              )}
+
+              {clientPreviewInformationMatchingUi && (
+                <p className={`pt-1 font-bold text-gray-900 ${questionFontClass}`}>
+                  Questions 19 - 22
+                </p>
               )}
 
               {isType(ReadingQuestionType.MATCHING_FEATURES) && (
@@ -2628,6 +3219,9 @@ const ReadingSection: React.FC<{
                   }
                   onChange={(next) => setAnswer(currentQ._id, next)}
                   firstQuestionNumber={groupStart}
+                  visualVariant={
+                    clientPreviewListSelectUi ? "two-letter" : "list"
+                  }
                 />
               )}
 
@@ -2659,7 +3253,13 @@ const ReadingSection: React.FC<{
                       : []
                   }
                   onChange={(next) => setAnswer(currentQ._id, next)}
-                  firstQuestionNumber={groupStart}
+                  firstQuestionNumber={clientPreviewSentenceEndingUi ? 7 : groupStart}
+                  visualVariant={
+                    clientPreviewSentenceEndingUi ? "reference" : "default"
+                  }
+                  showBookmark={clientPreviewSentenceEndingUi}
+                  bookmarked={flaggedQuestions.has(activeQNum)}
+                  onToggleBookmark={() => onToggleFlag(activeQNum)}
                 />
               )}
 
@@ -2888,11 +3488,11 @@ const ReadingSection: React.FC<{
         </div>
 
         {/* Prev / Next arrows */}
-        <div className="shrink-0 flex items-center justify-end gap-1 px-6 py-3 border-t border-gray-200 bg-white lg:px-8">
+        <div className="ielts-reading-navigation absolute bottom-3 right-3 z-20 flex w-max items-center gap-0.5">
           <button
             onClick={() => setActiveQNum(Math.max(1, activeQNum - 1))}
             disabled={activeQNum <= 1}
-            className="box-border flex h-16 min-h-16 w-16 min-w-16 shrink-0 items-center justify-center rounded-sm border-0 bg-gray-800 p-0 text-white transition-colors hover:bg-black disabled:bg-gray-200 disabled:text-white"
+            className="ielts-reading-nav-button ielts-reading-nav-previous box-border flex h-14 min-h-14 w-14 min-w-14 shrink-0 items-center justify-center rounded-sm border-0 p-0 transition-colors"
             aria-label="Previous question"
           >
             <FiArrowLeft className="h-8 w-8 stroke-[3.5]" />
@@ -2902,7 +3502,7 @@ const ReadingSection: React.FC<{
               setActiveQNum(Math.min(totalQuestions, activeQNum + 1))
             }
             disabled={activeQNum >= totalQuestions}
-            className="box-border flex h-16 min-h-16 w-16 min-w-16 shrink-0 items-center justify-center rounded-sm border-0 bg-black p-0 text-white transition-colors hover:bg-gray-800 disabled:bg-gray-200 disabled:text-white"
+            className="ielts-reading-nav-button ielts-reading-nav-next box-border flex h-14 min-h-14 w-14 min-w-14 shrink-0 items-center justify-center rounded-sm border-0 p-0 transition-colors"
             aria-label="Next question"
           >
             <FiArrowRight className="h-8 w-8 stroke-[3.5]" />
@@ -2973,35 +3573,39 @@ const ReadingBottomNav: React.FC<{
                     ?.split("·")[0]
                     ?.trim();
                   return (
-                    <button
-                      key={number}
-                      type="button"
-                      onClick={() => setActiveQNum(number)}
-                      aria-label={
-                        showcasePart
-                          ? `Question type ${showcaseLabel ?? number}${answered ? ", reviewed" : ""}${flagged ? ", flagged" : ""}`
-                          : `Question ${number}${answered ? ", answered" : ""}${flagged ? ", flagged" : ""}`
-                      }
-                      title={
-                        showcasePart
-                          ? part.questions[questionIndex]?.groupLabel
-                          : undefined
-                      }
-                      className={`relative flex h-8 items-center justify-center rounded-sm px-1 text-xs font-semibold transition-colors ${
-                        showcasePart ? "min-w-11" : "min-w-7"
-                      } ${
-                        active
-                          ? "border-2 border-sky-600 bg-white text-gray-950"
-                          : answered
-                            ? "bg-gray-800 text-white hover:bg-black"
-                            : "text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      {showcasePart ? showcaseLabel : number}
+                    <div key={number} className="relative shrink-0 pt-3">
                       {flagged && (
-                        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border border-white bg-amber-500" />
+                        <FiBookmark
+                          aria-hidden="true"
+                          className="ielts-review-flag absolute left-1/2 top-0 h-3.5 w-3.5 -translate-x-1/2 fill-current text-[#ff4d4f]"
+                        />
                       )}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveQNum(number)}
+                        aria-label={
+                          showcasePart
+                            ? `Question type ${showcaseLabel ?? number}${answered ? ", reviewed" : ""}${flagged ? ", flagged" : ""}`
+                            : `Question ${number}${answered ? ", answered" : ""}${flagged ? ", flagged" : ""}`
+                        }
+                        title={
+                          showcasePart
+                            ? part.questions[questionIndex]?.groupLabel
+                            : undefined
+                        }
+                        className={`flex h-8 items-center justify-center rounded-sm px-1 text-xs font-semibold transition-colors ${
+                          showcasePart ? "min-w-11" : "min-w-7"
+                        } ${
+                          active
+                            ? "border-2 border-sky-600 bg-white text-gray-950"
+                            : answered
+                              ? "bg-gray-800 text-white hover:bg-black"
+                              : "text-gray-700 hover:bg-gray-100"
+                        }`}
+                      >
+                        {showcasePart ? showcaseLabel : number}
+                      </button>
+                    </div>
                   );
                 })}
               </div>

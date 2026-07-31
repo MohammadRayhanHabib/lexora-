@@ -83,9 +83,416 @@ body {
   background: #eeeeee;
 }
 
+/* Full-exam accessibility modes controlled from the IELTS-style Options screen. */
+.ielts-exam-shell[data-ielts-contrast="white-on-black"],
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"] {
+  --ielts-contrast-background: #050505;
+  --ielts-contrast-text: #ffffff;
+  --ielts-contrast-muted: #d4d4d4;
+  color-scheme: dark;
+  background: var(--ielts-contrast-background) !important;
+  color: var(--ielts-contrast-text) !important;
+}
+
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"] {
+  --ielts-contrast-text: #ffd400;
+  --ielts-contrast-muted: #ffe76b;
+}
+
+.ielts-exam-shell[data-ielts-contrast="white-on-black"] :where(*),
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"] :where(*) {
+  background-color: transparent !important;
+  background-image: none !important;
+  border-color: var(--ielts-contrast-text) !important;
+  color: var(--ielts-contrast-text) !important;
+}
+
+.ielts-exam-shell[data-ielts-contrast="white-on-black"]
+  :where(input, textarea, select),
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"]
+  :where(input, textarea, select) {
+  background: var(--ielts-contrast-background) !important;
+  caret-color: var(--ielts-contrast-text);
+}
+
+.ielts-exam-shell[data-ielts-contrast="white-on-black"]
+  .ielts-options-overlay,
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"]
+  .ielts-options-overlay {
+  background: var(--ielts-contrast-background) !important;
+}
+
+.ielts-exam-shell[data-ielts-contrast="white-on-black"]
+  .ielts-notes-drawer,
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"]
+  .ielts-notes-drawer {
+  background: var(--ielts-contrast-background) !important;
+}
+
+.ielts-exam-shell[data-ielts-contrast="white-on-black"]
+  .ielts-review-flag,
+.ielts-exam-shell[data-ielts-contrast="white-on-black"]
+  .ielts-review-flag *,
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"]
+  .ielts-review-flag,
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"]
+  .ielts-review-flag * {
+  border-color: #ff4d4f !important;
+  color: #ff4d4f !important;
+}
+
+.ielts-exam-shell[data-ielts-contrast="white-on-black"]
+  .ielts-numbered-answer-input,
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"]
+  .ielts-numbered-answer-input {
+  background: transparent !important;
+}
+
+.ielts-exam-shell[data-ielts-contrast="white-on-black"]
+  :where(input, textarea)::placeholder,
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"]
+  :where(input, textarea)::placeholder {
+  color: var(--ielts-contrast-muted) !important;
+}
+
+.ielts-exam-shell[data-ielts-contrast="white-on-black"] button:disabled,
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"] button:disabled {
+  background: #555555 !important;
+}
+
+.ielts-exam-shell[data-ielts-contrast="white-on-black"]
+  .ielts-options-primary,
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"]
+  .ielts-options-primary {
+  border-color: #ec1235 !important;
+  background: #ec1235 !important;
+  color: #ffffff !important;
+}
+
+.ielts-exam-shell[data-ielts-contrast="white-on-black"]
+  .ielts-options-primary *,
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"]
+  .ielts-options-primary * {
+  border-color: currentColor !important;
+  color: #ffffff !important;
+}
+
+.ielts-exam-shell[data-ielts-contrast="white-on-black"]
+  [data-contrast-preview="black-on-white"],
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"]
+  [data-contrast-preview="black-on-white"] {
+  background: #ffffff !important;
+  border-color: #d4d4d4 !important;
+}
+
+.ielts-exam-shell[data-ielts-contrast="white-on-black"]
+  [data-contrast-preview="white-on-black"],
+.ielts-exam-shell[data-ielts-contrast="white-on-black"]
+  [data-contrast-preview="yellow-on-black"],
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"]
+  [data-contrast-preview="white-on-black"],
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"]
+  [data-contrast-preview="yellow-on-black"] {
+  background: #050505 !important;
+}
+
+.ielts-exam-shell[data-ielts-contrast="white-on-black"]
+  [data-contrast-preview="black-on-white"]
+  .ielts-contrast-preview-line,
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"]
+  [data-contrast-preview="black-on-white"]
+  .ielts-contrast-preview-line {
+  background: #111111 !important;
+}
+
+.ielts-exam-shell[data-ielts-contrast="white-on-black"]
+  [data-contrast-preview="white-on-black"]
+  .ielts-contrast-preview-line,
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"]
+  [data-contrast-preview="white-on-black"]
+  .ielts-contrast-preview-line {
+  background: #ffffff !important;
+}
+
+.ielts-exam-shell[data-ielts-contrast="white-on-black"]
+  [data-contrast-preview="yellow-on-black"]
+  .ielts-contrast-preview-line,
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"]
+  [data-contrast-preview="yellow-on-black"]
+  .ielts-contrast-preview-line {
+  background: #ffd400 !important;
+}
+
+/* Keep the Reading split divider visible in every contrast mode. */
+.ielts-exam-shell .ielts-reading-divider-gutter {
+  background: #e5e7eb !important;
+}
+
+.ielts-exam-shell .ielts-reading-divider-track {
+  background: #9ca3af !important;
+  color: #111827 !important;
+}
+
+.ielts-exam-shell .ielts-reading-divider-track:hover {
+  background: #737373 !important;
+}
+
+.ielts-exam-shell .ielts-reading-divider-handle {
+  background: #ffffff !important;
+  border-color: #111827 !important;
+  color: #111827 !important;
+}
+
+/* Keep the passage selection tools opaque and readable in every contrast mode. */
+.ielts-exam-shell .ielts-selection-toolbar {
+  background: #ffffff !important;
+  border-color: #6b7280 !important;
+  color: #374151 !important;
+}
+
+.ielts-exam-shell .ielts-selection-toolbar-button {
+  background: #ffffff !important;
+  border-color: #e5e7eb !important;
+  color: #374151 !important;
+}
+
+.ielts-exam-shell .ielts-selection-toolbar-button:hover {
+  background: #f3f4f6 !important;
+}
+
+.ielts-exam-shell .ielts-selection-note-icon {
+  background: #4b5563 !important;
+  color: #ffffff !important;
+}
+
+.ielts-exam-shell .ielts-selection-highlight-bar {
+  background: #f0cc35 !important;
+}
+
+.ielts-exam-shell .ielts-selection-highlight-pen {
+  background: #4b5563 !important;
+}
+
+.ielts-exam-shell .ielts-selection-arrow-outer,
+.ielts-exam-shell .ielts-selection-arrow-inner {
+  background: transparent !important;
+  color: transparent !important;
+  border-left-color: transparent !important;
+  border-right-color: transparent !important;
+}
+
+.ielts-exam-shell
+  .ielts-selection-toolbar[data-selection-placement="below"]
+  .ielts-selection-arrow-outer {
+  border-bottom-color: #6b7280 !important;
+}
+
+.ielts-exam-shell
+  .ielts-selection-toolbar[data-selection-placement="below"]
+  .ielts-selection-arrow-inner {
+  border-bottom-color: #ffffff !important;
+}
+
+.ielts-exam-shell
+  .ielts-selection-toolbar[data-selection-placement="above"]
+  .ielts-selection-arrow-outer {
+  border-top-color: #6b7280 !important;
+}
+
+.ielts-exam-shell
+  .ielts-selection-toolbar[data-selection-placement="above"]
+  .ielts-selection-arrow-inner {
+  border-top-color: #ffffff !important;
+}
+
+.ielts-exam-shell mark.ielts-passage-highlight {
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  background: #ffe58f !important;
+  color: #111827 !important;
+}
+
+.ielts-exam-shell mark.ielts-passage-note {
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  background: #67e8f9 !important;
+  color: #111827 !important;
+}
+
+/* Selected-text notes stay readable while the surrounding exam contrast changes. */
+.ielts-exam-shell .ielts-selected-note-card {
+  background: #d9eef9 !important;
+  border-color: #63a9d6 !important;
+  color: #111827 !important;
+}
+
+.ielts-exam-shell .ielts-selected-note-card :where(p, label) {
+  color: #111827 !important;
+}
+
+.ielts-exam-shell .ielts-selected-note-input {
+  background: #ffffff !important;
+  border-color: #268bd2 !important;
+  caret-color: #111827 !important;
+  color: #111827 !important;
+}
+
+.ielts-exam-shell .ielts-selected-note-input::placeholder {
+  color: #6b7280 !important;
+}
+
+.ielts-exam-shell .ielts-selected-note-save {
+  background: #374151 !important;
+  border-color: #374151 !important;
+  color: #ffffff !important;
+}
+
+.ielts-exam-shell .ielts-selected-note-delete {
+  color: #075985 !important;
+}
+
+.ielts-exam-shell .ielts-selected-note-delete-confirmation {
+  border-color: #63a9d6 !important;
+  color: #111827 !important;
+}
+
+.ielts-exam-shell
+  .ielts-selected-note-delete-confirmation
+  :where(p, button) {
+  color: #111827 !important;
+}
+
+.ielts-exam-shell .ielts-selected-note-cancel,
+.ielts-exam-shell .ielts-selected-note-confirm {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #075985 !important;
+}
+
+.ielts-exam-shell .ielts-selected-note-confirm {
+  color: #0c4a6e !important;
+}
+
+.ielts-exam-shell .ielts-highlight-note-card {
+  background: #fffbeb !important;
+  border-color: #fcd34d !important;
+  color: #1f2937 !important;
+}
+
+.ielts-exam-shell .ielts-highlight-note-card :where(p, button, svg) {
+  color: #1f2937 !important;
+}
+
+.ielts-exam-shell .ielts-reading-navigation {
+  --ielts-nav-previous-bg: #414141;
+  --ielts-nav-previous-hover: #2f2f2f;
+  --ielts-nav-previous-text: #ffffff;
+  --ielts-nav-next-bg: #000000;
+  --ielts-nav-next-hover: #1f1f1f;
+  --ielts-nav-next-text: #ffffff;
+  --ielts-nav-disabled-bg: #dedede;
+  --ielts-nav-disabled-text: #ffffff;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.ielts-exam-shell[data-ielts-contrast="white-on-black"]
+  .ielts-reading-navigation {
+  --ielts-nav-previous-bg: #525252;
+  --ielts-nav-previous-hover: #737373;
+  --ielts-nav-previous-text: #ffffff;
+  --ielts-nav-next-bg: #ffffff;
+  --ielts-nav-next-hover: #e5e5e5;
+  --ielts-nav-next-text: #050505;
+  --ielts-nav-disabled-bg: #262626;
+  --ielts-nav-disabled-text: #8a8a8a;
+}
+
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"]
+  .ielts-reading-navigation {
+  --ielts-nav-previous-bg: #3f3f3f;
+  --ielts-nav-previous-hover: #525252;
+  --ielts-nav-previous-text: #ffd400;
+  --ielts-nav-next-bg: #ffd400;
+  --ielts-nav-next-hover: #ffe04a;
+  --ielts-nav-next-text: #050505;
+  --ielts-nav-disabled-bg: #262626;
+  --ielts-nav-disabled-text: #a98e00;
+}
+
+.ielts-exam-shell .ielts-reading-nav-button {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ielts-exam-shell .ielts-reading-nav-button:where(
+    :focus,
+    :focus-visible,
+    :active
+  ) {
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.ielts-exam-shell .ielts-reading-nav-button :where(svg, svg *) {
+  color: inherit !important;
+  stroke: currentColor !important;
+}
+
+.ielts-exam-shell .ielts-reading-nav-button > svg {
+  transform: scale(1);
+  transition: transform 120ms ease;
+}
+
+.ielts-exam-shell
+  .ielts-reading-nav-button:focus-visible:not(:disabled)
+  > svg {
+  transform: scale(1.08);
+}
+
+.ielts-exam-shell .ielts-reading-nav-previous {
+  background: var(--ielts-nav-previous-bg) !important;
+  color: var(--ielts-nav-previous-text) !important;
+}
+
+.ielts-exam-shell .ielts-reading-nav-previous:hover {
+  background: var(--ielts-nav-previous-hover) !important;
+  color: var(--ielts-nav-previous-text) !important;
+}
+
+.ielts-exam-shell .ielts-reading-nav-next {
+  background: var(--ielts-nav-next-bg) !important;
+  color: var(--ielts-nav-next-text) !important;
+}
+
+.ielts-exam-shell .ielts-reading-nav-next:hover {
+  background: var(--ielts-nav-next-hover) !important;
+  color: var(--ielts-nav-next-text) !important;
+}
+
+.ielts-exam-shell
+  .ielts-reading-navigation
+  .ielts-reading-nav-button:disabled {
+  background: var(--ielts-nav-disabled-bg) !important;
+  color: var(--ielts-nav-disabled-text) !important;
+  cursor: default;
+  opacity: 1 !important;
+}
+
 /* ── Selection ──────────────────────────────────────── */
 ::selection {
   @apply bg-primary-200 text-primary-900;
+}
+
+.ielts-exam-shell[data-ielts-contrast="white-on-black"] ::selection,
+.ielts-exam-shell[data-ielts-contrast="yellow-on-black"] ::selection {
+  background: #8ecaff;
+  color: #050505;
 }
 
 /* ── Disable user-select inside test containers ─────── */

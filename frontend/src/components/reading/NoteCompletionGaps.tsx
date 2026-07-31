@@ -74,7 +74,7 @@ const NoteCompletionGaps: React.FC<NoteCompletionGapsProps> = ({
           readOnly={readOnly}
           disabled={readOnly}
           aria-label={`Gap ${qn}`}
-          className={`relative z-[1] min-w-0 flex-1 bg-transparent px-2.5 py-2 text-center text-gray-900 focus:outline-none focus:ring-0 disabled:cursor-default ${resolvedLineTextClassName}`}
+          className={`ielts-numbered-answer-input relative z-[1] min-w-0 flex-1 bg-transparent px-2.5 py-2 text-center text-gray-900 focus:outline-none focus:ring-0 disabled:cursor-default ${resolvedLineTextClassName}`}
           placeholder=""
           autoComplete="off"
         />

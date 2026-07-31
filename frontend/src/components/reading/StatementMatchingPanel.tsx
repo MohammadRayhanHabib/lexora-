@@ -161,7 +161,7 @@ const StatementMatchingPanel: React.FC<StatementMatchingPanelProps> = ({
                         const ch = raw.slice(-1);
                         if (letters.includes(ch)) setSlot(i, ch);
                       }}
-                      className="relative z-[1] w-full bg-transparent text-center text-sm font-semibold text-gray-900 focus:outline-none focus:ring-0 uppercase"
+                      className="ielts-numbered-answer-input relative z-[1] w-full bg-transparent text-center text-sm font-semibold text-gray-900 focus:outline-none focus:ring-0 uppercase"
                       placeholder=""
                       aria-label={`Question ${qn}, choose ${letters.join(", ")}`}
                       autoComplete="off"

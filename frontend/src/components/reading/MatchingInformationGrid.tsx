@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { FiBookmark } from "react-icons/fi";
 
 const DEFAULT_COLUMN_COUNT = 7;
 
@@ -16,6 +17,10 @@ export interface MatchingInformationGridProps {
   statementHeader?: string;
   /** When true, radios are disabled (e.g. admin preview). */
   readOnly?: boolean;
+  visualVariant?: "default" | "reference";
+  showBookmark?: boolean;
+  bookmarked?: boolean;
+  onToggleBookmark?: () => void;
 }
 
 function normalizeColumns(labels: string[]): string[] {
@@ -41,7 +46,12 @@ const MatchingInformationGrid: React.FC<MatchingInformationGridProps> = ({
   firstQuestionNumber,
   statementHeader = "Column 1",
   readOnly = false,
+  visualVariant = "default",
+  showBookmark = false,
+  bookmarked = false,
+  onToggleBookmark,
 }) => {
+  const referenceVariant = visualVariant === "reference";
   const columns = useMemo(
     () => normalizeColumns(columnLabels),
     [columnLabels],
@@ -71,13 +81,34 @@ const MatchingInformationGrid: React.FC<MatchingInformationGridProps> = ({
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-      <table className="w-full min-w-[320px] border-collapse text-sm text-gray-900">
+    <div className={referenceVariant ? "relative pr-10" : ""}>
+      <div
+        className={
+          referenceVariant
+            ? "overflow-x-auto border border-gray-300 bg-white"
+            : "overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm"
+        }
+      >
+      <table
+        className={`w-full border-collapse text-gray-900 ${
+          referenceVariant ? "min-w-[700px] text-base" : "min-w-[320px] text-sm"
+        }`}
+      >
         <thead>
-          <tr className="border-b border-gray-300 bg-gray-50">
+          <tr
+            className={
+              referenceVariant
+                ? "border-b border-gray-300 bg-white"
+                : "border-b border-gray-300 bg-gray-50"
+            }
+          >
             <th
               scope="col"
-              className="sticky left-0 z-[1] bg-gray-50 px-3 py-2.5 text-left font-bold text-gray-900 border-r border-gray-200 min-w-[10rem] max-w-[28rem]"
+              className={
+                referenceVariant
+                  ? "sticky left-0 z-[1] min-w-[28rem] border-r border-gray-300 bg-white px-5 py-3 text-center font-bold text-gray-900"
+                  : "sticky left-0 z-[1] min-w-[10rem] max-w-[28rem] border-r border-gray-200 bg-gray-50 px-3 py-2.5 text-left font-bold text-gray-900"
+              }
             >
               {statementHeader}
             </th>
@@ -85,7 +116,11 @@ const MatchingInformationGrid: React.FC<MatchingInformationGridProps> = ({
               <th
                 key={col}
                 scope="col"
-                className="px-2 py-2.5 text-center font-bold text-gray-900 border-r border-gray-200 last:border-r-0 w-10 min-w-[2.25rem]"
+                className={
+                  referenceVariant
+                    ? "w-10 min-w-8 border-r border-gray-300 px-2 py-3 text-center font-bold text-gray-900 last:border-r-0"
+                    : "w-10 min-w-[2.25rem] border-r border-gray-200 px-2 py-2.5 text-center font-bold text-gray-900 last:border-r-0"
+                }
               >
                 {col}
               </th>
@@ -99,9 +134,19 @@ const MatchingInformationGrid: React.FC<MatchingInformationGridProps> = ({
             return (
               <tr
                 key={ri}
-                className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50/90 transition-colors"
+                className={`border-b last:border-b-0 transition-colors ${
+                  referenceVariant
+                    ? "border-gray-300"
+                    : "border-gray-200 hover:bg-gray-50/90"
+                }`}
               >
-                <td className="sticky left-0 z-[1] bg-white px-3 py-2.5 align-top border-r border-gray-200 leading-snug max-w-[28rem]">
+                <td
+                  className={
+                    referenceVariant
+                      ? "sticky left-0 z-[1] max-w-[34rem] border-r border-gray-300 bg-white px-5 py-5 align-middle leading-snug"
+                      : "sticky left-0 z-[1] max-w-[28rem] border-r border-gray-200 bg-white px-3 py-2.5 align-top leading-snug"
+                  }
+                >
                   <span className="font-semibold tabular-nums text-gray-900">
                     {qn}.
                   </span>{" "}
@@ -114,9 +159,17 @@ const MatchingInformationGrid: React.FC<MatchingInformationGridProps> = ({
                 {columns.map((col) => (
                   <td
                     key={`${ri}-${col}`}
-                    className="border-r border-gray-100 last:border-r-0 p-1 align-middle text-center"
+                    className={
+                      referenceVariant
+                        ? "border-r border-gray-300 p-0 align-middle text-center last:border-r-0"
+                        : "border-r border-gray-100 p-1 align-middle text-center last:border-r-0"
+                    }
                   >
-                    <label className="flex h-10 w-full cursor-pointer items-center justify-center">
+                    <label
+                      className={`flex w-full cursor-pointer items-center justify-center ${
+                        referenceVariant ? "min-h-16" : "h-10"
+                      }`}
+                    >
                       <input
                         type="radio"
                         name={`info-match-${questionId}-${ri}`}
@@ -125,7 +178,9 @@ const MatchingInformationGrid: React.FC<MatchingInformationGridProps> = ({
                           if (!readOnly) setRow(ri, col);
                         }}
                         disabled={readOnly}
-                        className="h-4 w-4 text-primary-600 border-gray-400 focus:ring-primary-500 disabled:opacity-60"
+                        className={`text-primary-600 border-gray-400 focus:ring-primary-500 disabled:opacity-60 ${
+                          referenceVariant ? "h-[15px] w-[15px]" : "h-4 w-4"
+                        }`}
                         aria-label={`Question ${qn}: paragraph ${col}`}
                       />
                     </label>
@@ -136,6 +191,17 @@ const MatchingInformationGrid: React.FC<MatchingInformationGridProps> = ({
           })}
         </tbody>
       </table>
+      </div>
+      {referenceVariant && showBookmark && (
+        <button
+          type="button"
+          onClick={onToggleBookmark}
+          aria-label={bookmarked ? "Remove bookmark" : "Bookmark question"}
+          className="absolute right-0 top-[4.75rem] flex h-8 w-8 items-center justify-center text-gray-700 hover:text-gray-950"
+        >
+          <FiBookmark className={`h-6 w-6 ${bookmarked ? "fill-current" : ""}`} />
+        </button>
+      )}
     </div>
   );
 };
