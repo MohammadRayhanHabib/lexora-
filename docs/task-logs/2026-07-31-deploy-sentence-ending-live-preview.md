@@ -20,14 +20,20 @@ Sentence-Ending Matching two-way drag-and-drop interaction on the live URL.
 
 - Frontend production build passed before publication.
 - Local client-preview route returned HTTP 200.
-- Live deployment verification is pending.
+- Scoped release commit `d6a66e8` was pushed to `origin/main`.
+- The public Pages route continued to serve the previous asset bundle during
+  two bounded monitoring windows.
 
 ## Known limitations or follow-up
 
 - Direct Wrangler upload was unavailable because the local CLI had no API token
   and its OAuth callback was rejected by Cloudflare.
-- The release therefore uses the repository-connected Pages deployment flow.
+- The signed-in browser could not be controlled because the browser connector
+  failed to start under the current Windows ACL sandbox.
+- The repository push did not trigger a Pages build, so Cloudflare
+  authentication or a working dashboard session is still required.
 
 ## Final status
 
-In progress.
+Source published to GitHub; live deployment blocked on Cloudflare
+authentication.
