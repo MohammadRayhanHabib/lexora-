@@ -70,6 +70,10 @@ export function countNoteCompletionGaps(lines: string[] | undefined): number {
   let n = 0;
   for (const row of lines) {
     if (typeof row !== "string") continue;
+    const line = row.trim();
+    // Client-preview note layouts can include structural rows. They are
+    // headings/labels only and must not consume an answer number.
+    if (line.startsWith("#") || line.startsWith("@")) continue;
     if (row.includes(FLOWCHART_GAP_TOKEN)) {
       n += Math.max(0, row.split(FLOWCHART_GAP_TOKEN).length - 1);
     } else {

@@ -174,15 +174,20 @@ export const READING_PART_1_SHOWCASE_QUESTIONS: IReadingQuestionStudent[] = [
   }),
   question(6, ReadingQuestionType.NOTE_COMPLETION, {
     groupLabel: "R-06 · Note Completion",
-    instructions:
-      "Complete the notes. Write NO MORE THAN TWO WORDS for each answer.",
-    questionText: "How urban trees help a city",
+    instructions: "",
+    questionText: "The school system in Finland",
     options: [
-      `Tree crowns provide ${FLOWCHART_GAP_TOKEN}.`,
-      `Water released through leaves cools the surrounding ${FLOWCHART_GAP_TOKEN}.`,
-      `Roots create channels in the ${FLOWCHART_GAP_TOKEN}.`,
-      `Residents identify paths that flood after ${FLOWCHART_GAP_TOKEN}.`,
-      `Young trees need inspections by trained ${FLOWCHART_GAP_TOKEN}.`,
+      "# PISA tests",
+      `In the most recent tests, Finland's top subject was ${FLOWCHART_GAP_TOKEN}.`,
+      "# History",
+      "@ 1963:",
+      `A new school system was needed to improve Finland's ${FLOWCHART_GAP_TOKEN}.`,
+      `Schools followed ${FLOWCHART_GAP_TOKEN} that were created partly by teachers.`,
+      `Young pupils had to study an additional ${FLOWCHART_GAP_TOKEN}.`,
+      `All teachers were given the same ${FLOWCHART_GAP_TOKEN} to use.`,
+      "@ 1979:",
+      `Teachers had to get a ${FLOWCHART_GAP_TOKEN}, but they did not have to pay for this.`,
+      `!Applicants were attracted to the ${FLOWCHART_GAP_TOKEN} that teaching received.`,
     ],
   }),
   question(7, ReadingQuestionType.TABLE_COMPLETION, {

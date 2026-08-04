@@ -17,8 +17,8 @@ export interface NoteCompletionGapsProps {
   emptyLinePlaceholder?: string;
   /** Extra classes for line text (e.g. exam font size). */
   lineTextClassName?: string;
-  /** Note bullets + rose boxes vs summary paragraph + IELTS-style pink boxes */
-  appearance?: "note" | "summary";
+  /** Standard notes, summary paragraph, or official-style client preview. */
+  appearance?: "note" | "summary" | "official";
 }
 
 const NoteCompletionGaps: React.FC<NoteCompletionGapsProps> = ({
@@ -45,16 +45,25 @@ const NoteCompletionGaps: React.FC<NoteCompletionGapsProps> = ({
   };
 
   const isSummary = appearance === "summary";
+  const isOfficial = appearance === "official";
   const resolvedLineTextClassName = lineTextClassName || "text-sm";
-  const gapBoxClassSuffix = isSummary
-    ? "relative flex shrink-0 min-h-[42px] min-w-[min(100%,210px)] max-w-[280px] items-stretch overflow-hidden rounded-sm border border-dashed border-[#C0504D] bg-[#FCE4E4] shadow-sm"
-    : "relative flex shrink-0 min-h-[44px] min-w-[min(100%,220px)] max-w-[300px] items-stretch overflow-hidden rounded-md border-2 border-dashed border-rose-300 bg-rose-50/60 shadow-sm";
-  const gapBoxClassInline = isSummary
-    ? "relative inline-flex min-h-[36px] min-w-[9rem] max-w-[13rem] items-stretch overflow-hidden align-baseline rounded-sm border border-dashed border-[#C0504D] bg-[#FCE4E4] shadow-sm"
-    : "relative inline-flex min-h-[40px] min-w-[10rem] max-w-[14rem] items-stretch overflow-hidden align-baseline rounded-md border-2 border-dashed border-rose-300 bg-rose-50/60 shadow-sm";
-  const qnClass = isSummary
-    ? "pointer-events-none absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums text-gray-900"
-    : "pointer-events-none absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums text-rose-900";
+  const officialGapClass =
+    "relative inline-flex h-[38px] min-w-[12.5rem] max-w-[15rem] items-stretch overflow-hidden border border-gray-500 bg-white align-middle focus-within:border-2 focus-within:border-[#1683d8]";
+  const gapBoxClassSuffix = isOfficial
+    ? officialGapClass
+    : isSummary
+      ? "relative flex shrink-0 min-h-[42px] min-w-[min(100%,210px)] max-w-[280px] items-stretch overflow-hidden rounded-sm border border-dashed border-[#C0504D] bg-[#FCE4E4] shadow-sm"
+      : "relative flex shrink-0 min-h-[44px] min-w-[min(100%,220px)] max-w-[300px] items-stretch overflow-hidden rounded-md border-2 border-dashed border-rose-300 bg-rose-50/60 shadow-sm";
+  const gapBoxClassInline = isOfficial
+    ? officialGapClass
+    : isSummary
+      ? "relative inline-flex min-h-[36px] min-w-[9rem] max-w-[13rem] items-stretch overflow-hidden align-baseline rounded-sm border border-dashed border-[#C0504D] bg-[#FCE4E4] shadow-sm"
+      : "relative inline-flex min-h-[40px] min-w-[10rem] max-w-[14rem] items-stretch overflow-hidden align-baseline rounded-md border-2 border-dashed border-rose-300 bg-rose-50/60 shadow-sm";
+  const qnClass = isOfficial
+    ? "pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-semibold tabular-nums text-gray-700"
+    : isSummary
+      ? "pointer-events-none absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums text-gray-900"
+      : "pointer-events-none absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums text-rose-900";
 
   const renderGap = (globalIdx: number, variant: "suffix" | "inline") => {
     const qn = firstQuestionNumber + globalIdx;
@@ -74,7 +83,9 @@ const NoteCompletionGaps: React.FC<NoteCompletionGapsProps> = ({
           readOnly={readOnly}
           disabled={readOnly}
           aria-label={`Gap ${qn}`}
-          className={`ielts-numbered-answer-input relative z-[1] min-w-0 flex-1 bg-transparent px-2.5 py-2 text-center text-gray-900 focus:outline-none focus:ring-0 disabled:cursor-default ${resolvedLineTextClassName}`}
+          className={`ielts-numbered-answer-input relative z-[1] min-w-0 flex-1 bg-transparent px-2.5 text-center text-gray-900 focus:outline-none focus:ring-0 disabled:cursor-default ${
+            isOfficial ? "py-1.5 font-semibold" : "py-2"
+          } ${resolvedLineTextClassName}`}
           placeholder=""
           autoComplete="off"
         />
@@ -86,9 +97,29 @@ const NoteCompletionGaps: React.FC<NoteCompletionGapsProps> = ({
   const items: React.ReactNode[] = [];
 
   lines.forEach((row, li) => {
-    const line = typeof row === "string" ? row : "";
-    if (line.includes(FLOWCHART_GAP_TOKEN)) {
-      const parts = line.split(FLOWCHART_GAP_TOKEN);
+    const line = typeof row === "string" ? row.trim() : "";
+    if (isOfficial && (line.startsWith("#") || line.startsWith("@"))) {
+      const isSectionHeading = line.startsWith("#");
+      const label = line.replace(/^[#@]+\s*/, "");
+      items.push(
+        <li
+          key={li}
+          className={
+            isSectionHeading
+              ? "pt-1 text-base font-bold leading-relaxed text-gray-950"
+              : "pt-1 text-base font-normal leading-relaxed text-gray-900"
+          }
+        >
+          {label}
+        </li>,
+      );
+      return;
+    }
+
+    const suppressBullet = isOfficial && line.startsWith("!");
+    const displayLine = suppressBullet ? line.slice(1).trimStart() : line;
+    if (displayLine.includes(FLOWCHART_GAP_TOKEN)) {
+      const parts = displayLine.split(FLOWCHART_GAP_TOKEN);
       const inner: React.ReactNode[] = [];
       for (let pi = 0; pi < parts.length; pi++) {
         const part = parts[pi] ?? "";
@@ -111,11 +142,15 @@ const NoteCompletionGaps: React.FC<NoteCompletionGapsProps> = ({
       items.push(
         <li
           key={li}
-          className="flex flex-wrap items-baseline gap-x-2 gap-y-2 text-sm text-gray-900 leading-relaxed"
+          className={`flex flex-wrap items-center text-gray-900 leading-relaxed ${
+            isOfficial ? "gap-x-3 gap-y-2" : "gap-x-2 gap-y-2 text-sm"
+          }`}
         >
-          {showBullet ? (
+          {showBullet && !suppressBullet ? (
             <span
-              className="mt-1.5 h-1.5 w-1.5 shrink-0 self-start rounded-full bg-gray-500"
+              className={`shrink-0 self-start rounded-full bg-gray-700 ${
+                isOfficial ? "mt-[0.7rem] h-1 w-1" : "mt-1.5 h-1.5 w-1.5"
+              }`}
               aria-hidden
             />
           ) : null}
@@ -139,8 +174,8 @@ const NoteCompletionGaps: React.FC<NoteCompletionGapsProps> = ({
             />
           ) : null}
           <span className={`min-w-0 flex-1 ${lineTextClassName}`.trim()}>
-            {line.trim() ? (
-              line.trim()
+            {displayLine.trim() ? (
+              displayLine.trim()
             ) : (
               <span className="text-gray-400 italic">{emptyLinePlaceholder}</span>
             )}
@@ -153,7 +188,9 @@ const NoteCompletionGaps: React.FC<NoteCompletionGapsProps> = ({
 
   return (
     <ul
-      className={`list-none pl-0 ${isSummary ? "space-y-3" : "space-y-4"}`}
+      className={`list-none pl-0 ${
+        isOfficial ? "space-y-3" : isSummary ? "space-y-3" : "space-y-4"
+      }`}
     >
       {items}
     </ul>

@@ -2127,6 +2127,9 @@ const ReadingSection: React.FC<{
   const clientPreviewSentenceEndingUi =
     isClientShowcase &&
     currentQ?.questionType === ReadingQuestionType.MATCHING_SENTENCE_ENDINGS;
+  const clientPreviewNoteCompletionUi =
+    isClientShowcase &&
+    currentQ?.questionType === ReadingQuestionType.NOTE_COMPLETION;
   const splitContainerRef = useRef<HTMLDivElement | null>(null);
   const passageContentRef = useRef<HTMLDivElement | null>(null);
   const selectionToolbarRef = useRef<HTMLDivElement | null>(null);
@@ -2827,7 +2830,9 @@ const ReadingSection: React.FC<{
                       ? "2 answers"
                       : clientPreviewHeadingMatchingUi
                         ? "6 examples"
-                        : `${READING_SHOWCASE_EXAMPLES_PER_TYPE} examples`}
+                        : clientPreviewNoteCompletionUi
+                          ? "7 examples"
+                          : `${READING_SHOWCASE_EXAMPLES_PER_TYPE} examples`}
                   </span>
                 </div>
               )}
@@ -2840,6 +2845,8 @@ const ReadingSection: React.FC<{
                   <>Questions 14 - 18</>
                 ) : clientPreviewSentenceEndingUi ? (
                   <>Questions 7 - 9</>
+                ) : clientPreviewNoteCompletionUi ? (
+                  <>Questions 7 - 13</>
                 ) : (
                   <>
                     Questions {groupStart}
@@ -2888,6 +2895,14 @@ const ReadingSection: React.FC<{
                   </p>
                   <p className="leading-relaxed">
                     Choose the correct ending and move it into the gap.
+                  </p>
+                </div>
+              ) : clientPreviewNoteCompletionUi ? (
+                <div className={`space-y-1 text-gray-900 ${questionInstructionFontClass}`}>
+                  <p className="leading-relaxed">Complete the notes below.</p>
+                  <p className="leading-relaxed">
+                    Write <strong>NO MORE THAN TWO WORDS AND/OR A NUMBER</strong>{" "}
+                    from the passage in each gap.
                   </p>
                 </div>
               ) : currentQ.instructions ? (
@@ -3301,10 +3316,16 @@ const ReadingSection: React.FC<{
                       : []
                   }
                   onChange={(next) => setAnswer(currentQ._id, next)}
-                  firstQuestionNumber={groupStart}
+                  firstQuestionNumber={clientPreviewNoteCompletionUi ? 7 : groupStart}
                   lineTextClassName={`${questionFontClass} text-gray-800`}
                   showBullet={!summaryGapUi}
-                  appearance={summaryGapUi ? "summary" : "note"}
+                  appearance={
+                    clientPreviewNoteCompletionUi
+                      ? "official"
+                      : summaryGapUi
+                        ? "summary"
+                        : "note"
+                  }
                   emptyLinePlaceholder={
                     summaryGapUi ? "Summary paragraph…" : undefined
                   }
